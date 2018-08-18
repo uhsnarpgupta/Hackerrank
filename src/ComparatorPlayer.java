@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Scanner;
@@ -29,6 +30,10 @@ class Player {
     Player(String name, int score) {
         this.name = name;
         this.score = score;
+        ArrayList<Integer> list= new ArrayList<>();
+        list.add(2);
+        list.add(3);
+        list.add(0,3);
     }
 }
 
