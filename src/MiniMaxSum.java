@@ -1,7 +1,7 @@
 import java.math.BigInteger;
 import java.util.*;
 
-public class MiniMaxSum {
+public class MiniMaxSum extends ArrayList{
     static Scanner scanner = new Scanner(System.in);
 
     public static void main(String [] agrs){
@@ -9,24 +9,35 @@ public class MiniMaxSum {
         ArrayList<ArrayList<Integer>> lists = new ArrayList<>();
         List<Integer> list = new ArrayList<Integer>();
 
-        int min = Integer.MAX_VALUE;
-        int max = Integer.MIN_VALUE;
+        BigInteger [] bArray = new BigInteger[5];
+
+        BigInteger min = BigInteger.ZERO;
+        BigInteger max = BigInteger.ZERO;
         BigInteger sum = BigInteger.ZERO;
         for(int i = 0; i < 5; i++){
-            arr[i] = scanner.nextInt();
-            BigInteger num = BigInteger.valueOf(arr[i]);
-
-            sum += num;
+            bArray[i] = BigInteger.valueOf(scanner.nextInt());
+            /*BigInteger num = BigInteger.valueOf(arr[i]);
+            sum = num.add(sum);*/
         }
-        System.out.println("Sum: "+sum);
 
+        Arrays.sort(bArray);
+        for(int l = 0; l < bArray.length - 1; l++){
+            min = min.add(bArray[l]);
+        }
+
+        Arrays.sort(bArray, Collections.reverseOrder());
+        for(int l = 0; l < bArray.length - 1; l++){
+            max = max.add(bArray[l]);
+        }
+
+/*
         for(int k = 0; k < arr.length; k++){
-            max = Math.max(max, sum - arr[k]);
+            max = Math.max(max, sum.subtract(BigInteger.valueOf(arr[k])));
             min = Math.min(min, sum - arr[k]);
             System.out.println("Min: "+min+" Max: "+max+" Difference: "+(sum-arr[k]));
 
         }
-            list.forEach(System.out::print);
+            list.forEach(System.out::print);*/
 
         //Collections.addAll(list, Arrays.stream(arr).boxed().toArray(Integer[]::new));
 
