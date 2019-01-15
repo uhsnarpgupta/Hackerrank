@@ -8,11 +8,16 @@ public class JavaHashSet {
         int t = s.nextInt();
         String[] pair_left = new String[t];
         String[] pair_right = new String[t];
+        Set<String> setLeft = new HashSet<>(t);
+        Set<String> setRight = new HashSet<>(t);
 
         for (int i = 0; i < t; i++) {
             pair_left[i] = s.next();
+            setLeft.add(pair_left[i]);
             pair_right[i] = s.next();
+            setRight.add(pair_right[i]);
         }
+
         s.close();
         Set<String> set = new HashSet<>(t);
         for (int i = 0; i < t; i++) {
