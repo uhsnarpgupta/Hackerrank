@@ -1,4 +1,4 @@
-package datastructures.linkedlist.single;
+package linkedlist.single;
 
 public class EmployeeNode {
     private Employee employee;

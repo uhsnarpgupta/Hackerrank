@@ -1,4 +1,4 @@
-package datastructures.linkedlist.single;
+package linkedlist.single;
 
 public class Employee {
     private String name;

@@ -1,4 +1,4 @@
-package linkedlist.doubly;
+package stack.linkedlistimpl;
 
 public class Employee {
     private String name;

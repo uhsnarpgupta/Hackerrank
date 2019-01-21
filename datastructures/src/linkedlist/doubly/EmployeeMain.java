@@ -1,4 +1,4 @@
-package datastructures.linkedlist.doubly;
+package linkedlist.doubly;
 
 public class EmployeeMain {
     public static void main(String[] args) {
@@ -7,9 +7,9 @@ public class EmployeeMain {
         Employee mary = new Employee("Mary", 37);
         Employee mike = new Employee("Mike", 28);
         Employee hary = new Employee("Hary", 28);
+        Employee jamie = new Employee("Jamie", 32);
 
-
-        EmployeeLinkedList list = new EmployeeLinkedList();
+        EmployeeDoublyLinkedList list = new EmployeeDoublyLinkedList();
 
         System.out.println(list.isEmpty());
         list.addToFront(jane);
@@ -21,14 +21,18 @@ public class EmployeeMain {
 
         list.printList();
 
-        System.out.println(list.getSize());
+        System.out.println("Add to End: " + list.getSize());
 
         list.removeFromFront();
-        System.out.println(list.getSize());
+        System.out.println("Remove from Front: " + list.getSize());
         list.printList();
 
         list.removeFromEnd();
-        System.out.println(list.getSize());
+        System.out.println("Remove from End: " + list.getSize());
+        list.printList();
+
+        list.addToBefore(jamie, mary);
+        System.out.println("Add to Before: " + list.getSize());
         list.printList();
     }
 }

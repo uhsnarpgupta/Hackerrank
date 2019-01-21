@@ -1,6 +1,6 @@
-package datastructures.linkedlist.doubly;
+package linkedlist.doubly;
 
-public class EmployeeLinkedList {
+public class EmployeeDoublyLinkedList {
     private EmployeeNode head;
     private EmployeeNode tail;
     private int size;
@@ -29,6 +29,28 @@ public class EmployeeLinkedList {
         }
         tail = node;
         size++;
+    }
+
+    public boolean addToBefore(Employee newEmployee, Employee existingEmployee) {
+        EmployeeNode current = head;
+        while (current != null && !current.getEmployee().equals(existingEmployee)) {
+            current = current.getNext();
+        }
+        if (current == null) {
+            return false;
+        }
+        EmployeeNode newNode = new EmployeeNode(newEmployee);
+        newNode.setPrevious(current.getPrevious());
+        newNode.setNext(current);
+        current.setPrevious(newNode);
+
+        if (head == current) {
+            head = newNode;
+        } else {
+            newNode.getPrevious().setNext(newNode);
+        }
+        size++;
+        return true;
     }
 
     public void printList() {

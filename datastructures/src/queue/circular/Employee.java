@@ -1,4 +1,4 @@
-package linkedlist.doubly;
+package queue.circular;
 
 public class Employee {
     private String name;
