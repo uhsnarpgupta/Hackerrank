@@ -1,0 +1,2 @@
+1: Journal Start
+2: Journal End
