@@ -55,6 +55,37 @@ public class IntegerLinkedList {
         return true;
     }
 
+    public static IntegerNode reverse(IntegerNode node, int k) {
+        IntegerNode curr = node,
+                prev = null,
+                next = null;
+        int count = 0;
+        while (curr != null && count < k) {
+            next = curr.getNext();
+            curr.setNext(prev);
+            prev = curr;
+            curr = next;
+            count++;
+        }
+
+        if (next != null)
+            node.setNext(reverse(next, k));
+        return prev;
+    }
+
+    IntegerNode reverse(IntegerNode head) {
+        IntegerNode temp = head;
+        IntegerNode prev = null;
+
+        while (temp != null) {
+            head = head.getNext();
+            temp.setNext(prev);
+            prev = temp;
+            temp = head;
+        }
+        return prev;
+    }
+
     public void printList() {
         IntegerNode current = head;
         System.out.print("HEAD -> ");

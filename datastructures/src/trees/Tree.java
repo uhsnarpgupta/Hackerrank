@@ -83,4 +83,19 @@ public class Tree {
             return root.max();
         }
     }
+
+    void mirror(TreeNode node) {
+        if (node == null)
+            return;
+        else {
+            /* do the subtrees */
+            mirror(node.getLeftChild());
+            mirror(node.getRightChild());
+
+            /* swap the pointers in this node */
+            TreeNode temp = node.getLeftChild();
+            node.setLeftChild(node.getRightChild());
+            node.setRightChild(temp);
+        }
+    }
 }
