@@ -28,20 +28,20 @@ class FoodFactory {
                 return null;
         }
     } // End of getFood method
-} // End of factory class
+} // End of creational.factory class
 
 public class FactoryPattern {
     public static void main(String args[]) {
         Do_Not_Terminate.forbidExit();
         try {
             Scanner sc = new Scanner(System.in);
-            //creating the factory
+            //creating the creational.factory
             FoodFactory foodFactory = new FoodFactory();
 
-            //factory instantiates an object
+            //creational.factory instantiates an object
             Food food = foodFactory.getFood(sc.nextLine());
 
-            System.out.println("The factory returned " + food.getClass());
+            System.out.println("The creational.factory returned " + food.getClass());
             System.out.println(food.getType());
         } catch (Do_Not_Terminate.ExitTrappedException e) {
             System.out.println("Unsuccessful Termination!!");

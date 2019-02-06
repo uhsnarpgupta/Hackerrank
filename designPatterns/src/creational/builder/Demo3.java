@@ -1,4 +1,4 @@
-package builder;
+package creational.builder;
 
 class Personale {
     //address
@@ -21,7 +21,7 @@ class Personale {
     }
 }
 
-//builder facade
+//creational.builder facade
 class PersonaleBuilder {
     protected Personale personale = new Personale();
 
