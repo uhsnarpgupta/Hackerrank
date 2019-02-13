@@ -2,6 +2,7 @@ package array;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.Scanner;
 
 public class MemoriseMe {
     public static void main(String args[]) throws Exception {
@@ -27,6 +28,42 @@ public class MemoriseMe {
             sb.append("\n");
         }
         System.out.println(sb);
+    }
+
+    static void lowSpeedSol(String args[]) throws Exception {
+        Scanner scanner = new Scanner(System.in);
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader(System.in));
+        int n = Integer.parseInt(br.readLine());
+        int[] arr = new int[n];
+
+        String inputStr[] = br.readLine().split(" ");
+
+        int i = 0;
+        int largest = Integer.MIN_VALUE;
+        while (n != 0) {
+            arr[i++] = Integer.parseInt(inputStr[i]);
+            largest = arr[i - 1] > largest ? arr[i - 1] : largest;
+            n--;
+        }
+
+        int[] sum = new int[largest + 1];
+        int l = 0;
+        while (l < arr.length) {
+            sum[arr[l]]++;
+            l++;
+        }
+        int k = scanner.nextInt();
+        int[] req = new int[k];
+
+        int j = 0;
+        while (k != 0) {
+            req[j++] = scanner.nextInt();
+            k--;
+        }
+        for (int p = 0; p < req.length; p++) {
+            System.out.println(req[p] > largest || sum[req[p]] == 0 ? "NOT PRESENT" : sum[req[p]]);
+        }
     }
 }
 

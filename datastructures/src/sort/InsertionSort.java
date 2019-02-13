@@ -1,4 +1,4 @@
-package datastructures.sort;
+package sort;
 
 public class InsertionSort {
     private static int[] sort(int[] intArray) {
@@ -20,3 +20,8 @@ public class InsertionSort {
         }
     }
 }
+
+/*
+Insertion sort a quadratic running time (i.e., O(n2)).
+The average case is also quadratic, which makes insertion sort impractical for sorting large arrays.
+ */

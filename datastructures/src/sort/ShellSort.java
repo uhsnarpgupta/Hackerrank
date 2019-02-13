@@ -1,4 +1,4 @@
-package datastructures.sort;
+package sort;
 
 public class ShellSort {
     private static int[] sort(int[] intArray) {

@@ -1,4 +1,4 @@
-package datastructures.sort;
+package sort;
 
 public class SelectionSort {
     private static int[] sort(int[] unsortedArray) {
@@ -25,3 +25,7 @@ public class SelectionSort {
         }
     }
 }
+
+/*
+O(n^2) complexity
+ */

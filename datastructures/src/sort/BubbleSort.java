@@ -1,4 +1,4 @@
-package datastructures.sort;
+package sort;
 
 public class BubbleSort {
     private static int[] sort(int[] unsortedArray) {
@@ -25,3 +25,27 @@ public class BubbleSort {
         }
     }
 }
+
+/*
+Bubble sort has
+worst-case and average complexity both О(n^2)
+2, 4, 6, 9, 12, 23, 0, 1, 34,
+
+2, 4, 6, 9, 12, 0, 1, 23, 34,
+
+2, 4, 6, 9, 0, 1, 12, 23, 34,
+
+2, 4, 6, 0, 1, 9, 12, 23, 34,
+
+2, 4, 0, 1, 6, 9, 12, 23, 34,
+
+2, 0, 1, 4, 6, 9, 12, 23, 34,
+
+0, 1, 2, 4, 6, 9, 12, 23, 34,
+
+0, 1, 2, 4, 6, 9, 12, 23, 34,
+
+0, 1, 2, 4, 6, 9, 12, 23, 34,
+
+0, 1, 2, 4, 6, 9, 12, 23, 34,
+ */

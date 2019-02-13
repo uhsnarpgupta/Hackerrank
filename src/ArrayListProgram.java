@@ -10,6 +10,7 @@ public class ArrayListProgram {
         ArrayList<Integer> sizeArray = new ArrayList<Integer>();
         ArrayList<Object> resultArray = new ArrayList<Object>();
         Map<Integer, ArrayList> map = new HashMap<>();
+
         for(int i = 0; i < n; i++){
             int k = scan.nextInt();
             sizeArray.add(k);
