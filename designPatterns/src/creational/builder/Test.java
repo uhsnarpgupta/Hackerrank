@@ -1,12 +1,12 @@
-package builder;
+package creational.builder;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /*
-A builder is a separate component for building an object
-Can either give builder a constructor or return it via a static function
-To make builder fluent, return this
+A creational.builder is a separate component for building an object
+Can either give creational.builder a constructor or return it via a static function
+To make creational.builder fluent, return this
 Different facets of an object can be built with different builders working in tandem via a base class
  */
 class Field {

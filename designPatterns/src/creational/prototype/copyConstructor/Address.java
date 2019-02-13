@@ -1,4 +1,4 @@
-package prototype.copyConstructor;
+package creational.prototype.copyConstructor;
 
 public class Address {
     public String streetAddress, city, country;

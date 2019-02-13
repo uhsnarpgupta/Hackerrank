@@ -1,4 +1,4 @@
-package singleton;
+package creational.singleton;
 
 import java.io.*;
 
@@ -51,7 +51,7 @@ class Demo {
         BasicSingleton singleton = BasicSingleton.getInstance();
         singleton.setValue(111);
 
-        String fileName = "C:\\Users\\pragupta14\\IdeaProjects\\Hackerrank\\designPatterns\\singleton.bin";
+        String fileName = "C:\\Users\\pragupta14\\IdeaProjects\\Hackerrank\\designPatterns\\creational.singleton.bin";
         saveToFile(singleton, fileName);
 
         singleton.setValue(222);

@@ -1,4 +1,4 @@
-package builder;
+package creational.builder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -79,7 +79,7 @@ public class Demo {
         sb.append("</ul>");
         System.out.println(sb);
 
-        System.out.println("Using builder pattern");
+        System.out.println("Using creational.builder pattern");
 
         HtmlBuilder builder = new HtmlBuilder("ul");
         builder
