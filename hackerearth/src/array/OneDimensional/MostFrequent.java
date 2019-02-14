@@ -1,4 +1,4 @@
-package array;
+package array.OneDimensional;
 
 import java.util.*;
 import java.util.stream.Collectors;
