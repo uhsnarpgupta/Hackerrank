@@ -1,3 +1,5 @@
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 
 public class Lexicographically {
@@ -9,6 +11,8 @@ public class Lexicographically {
         String B = scanner.next();
         scanner.close();
 
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        StringBuilder sb = new StringBuilder();
         /* Sum lengths */
         System.out.println(A.length() + B.length());
 
