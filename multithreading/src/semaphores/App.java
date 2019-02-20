@@ -1,4 +1,4 @@
-package src.semaphores;
+package semaphores;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

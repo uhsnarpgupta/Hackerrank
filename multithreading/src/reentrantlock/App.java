@@ -1,4 +1,4 @@
-package src.reentrantlock;
+package reentrantlock;
 
 import java.util.Scanner;
 import java.util.concurrent.locks.Condition;
@@ -22,6 +22,7 @@ class Runner {
         cond.await();
         System.out.println("Woken up!");
         try {
+            System.out.println("First thread increament!");
             increament();
         } finally {
             lock.unlock();
@@ -36,6 +37,7 @@ class Runner {
         System.out.println("Got return key.");
         cond.signal();
         try {
+            System.out.println("Second thread increament!");
             increament();
         } finally {
             lock.unlock();

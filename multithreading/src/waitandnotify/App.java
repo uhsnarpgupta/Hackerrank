@@ -1,4 +1,4 @@
-package src.waitandnotify;
+package waitandnotify;
 
 import java.util.Scanner;
 
@@ -8,7 +8,6 @@ class Processor {
             System.out.println("Producer thread running...");
             wait();
             System.out.println("Resumed.");
-
         }
     }
 

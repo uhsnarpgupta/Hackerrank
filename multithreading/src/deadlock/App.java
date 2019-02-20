@@ -1,4 +1,4 @@
-package src.deadlock;
+package deadlock;
 
 import java.util.Random;
 import java.util.concurrent.locks.Lock;
