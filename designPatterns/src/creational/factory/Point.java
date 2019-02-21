@@ -18,7 +18,6 @@ public class Point {
             return new Point(rho * Math.cos(theta), rho * Math.sin(theta));
         }
     }
-
 }
 
 class Demo {
