@@ -1,8 +1,11 @@
+package javabase;
+
 import java.util.BitSet;
 import java.util.Scanner;
 
 public class JavaBitSet {
     static Scanner scanner = new Scanner(System.in);
+
     public static void main(String [] args){
         int N = scanner.nextInt();
         int M = scanner.nextInt();

@@ -1,3 +1,5 @@
+package javabase;
+
 import java.util.Scanner;
 
 

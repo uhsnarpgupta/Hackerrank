@@ -1,4 +1,7 @@
-import java.util.*;
+package javabase;
+
+import java.util.Scanner;
+import java.util.Stack;
 
 public class JavaStack {
 

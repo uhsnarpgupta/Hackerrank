@@ -1,3 +1,5 @@
+package javabase;
+
 import java.util.Scanner;
 import java.util.regex.Pattern;
 
@@ -9,8 +11,7 @@ public class PatternRegexChecker {
             String pattern = in.nextLine();
             try {
                 Pattern pattern1 = Pattern.compile(pattern);
-            }
-            catch (Exception e){
+            } catch (Exception e){
                 System.out.println(e.getMessage());
             }
         }

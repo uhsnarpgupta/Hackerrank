@@ -1,3 +1,5 @@
+package javabase;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -5,6 +7,7 @@ import java.util.Scanner;
 
 public class ArrayListProgram {
     static Scanner scan = new Scanner(System.in);
+
     public static void main(String [] args){
         int n = scan.nextInt();
         ArrayList<Integer> sizeArray = new ArrayList<Integer>();
@@ -30,8 +33,7 @@ public class ArrayListProgram {
             }
             if(sizeArray.get(querryArray.get(0)-1)>=querryArray.get(1) && map.get(querryArray.get(0)).get(querryArray.get(1)-1)!=null){
                 resultArray.add(map.get(querryArray.get(0)).get(querryArray.get(1)-1));
-            }
-            else{
+            } else{
                 resultArray.add("ERROR!");
             }
         }

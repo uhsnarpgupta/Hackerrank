@@ -1,4 +1,5 @@
-import java.math.BigDecimal;
+package javabase;
+
 import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
