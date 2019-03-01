@@ -14,20 +14,30 @@ public class EnemyPair {
         int[] arr7 = {1, 2};
         int[] arr8 = {3, 4};
 
-        //findEnemyPair(arr1, arr2);
+        int[] arr9 = {2, 1, 2};
+        int[] arr10 = {2, 3, 5};
+
+        findEnemyPair(5, arr9, arr10);
 
         //findEnemyPair(arr3, arr4);
-        findEnemyPair(arr7, arr8);
+        //findEnemyPair(arr7, arr8);
     }
 
-    private static int findEnemyPair(int[] arr1, int[] arr2) {
+    private static int findEnemyPair(int m, int[] arr1, int[] arr2) {
         int n = arr1.length;
         int count = 0;
         //Map<Integer, Set<Integer>> map = new HashMap<>();
 
+        Set<Integer> it = new HashSet<>();
+        for (int j = 1; j <= m; j++) {
+            it.add(j);
+        }
+        /*for(int j = 0; j < arr2.length; j++){
+            it.add(arr2[j]);
+        }*/
         Set<Integer> set = Arrays.stream(arr1).boxed().collect(Collectors.toSet());
         System.out.println("<------------POWERSET------------>");
-        powerSet(set).forEach(st -> {
+        powerSet(it).forEach(st -> {
             st.forEach(System.out::print);
             System.out.println();
         });
@@ -39,10 +49,11 @@ public class EnemyPair {
             map.put(arr1[i], arr2[i]);
         }
         Set<Set<Integer>> newSet = new HashSet<>();
-        Set<Integer> addSet = null;
         moveon:
         for (Set<Integer> st : powerSet(set)) {
             Set<Integer> testSet = st;
+            Set<Integer> addSet = null;
+
             for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
                 if (testSet.contains(entry.getKey()) && testSet.contains(entry.getValue())) {
                     //addSet = null;
@@ -104,7 +115,7 @@ public class EnemyPair {
 
 
         Set<FoePair> pairs = new HashSet<>();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < arr1.length; i++) {
             set1.put(arr1[i], arr2[i]);
         }
 
