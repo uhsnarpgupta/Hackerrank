@@ -18,8 +18,7 @@ public class SyntaxExample {
             print("Happy", "Birthday");
 
             System.out.println("Sari".compareTo("Ram"));
-
-
+            System.out.println("Hari".compareTo("Ram"));
         }
     }
 

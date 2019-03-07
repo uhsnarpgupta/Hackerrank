@@ -15,10 +15,10 @@ public class AnimalEnemy {
         int[] arr7 = {1, 2};
         int[] arr8 = {3, 4};
 
-        //findEnemyPair(arr1, arr2);
-
-        //findEnemyPair(arr3, arr4);
         System.out.println(findFriendGroups(arr1, arr2));
+        System.out.println(findFriendGroups(arr3, arr4));
+        System.out.println(findFriendGroups(arr5, arr6));
+        System.out.println(findFriendGroups(arr7, arr8));
 
     }
 

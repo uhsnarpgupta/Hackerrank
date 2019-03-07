@@ -17,7 +17,15 @@ public class EnemyPair {
         int[] arr9 = {2, 1, 2};
         int[] arr10 = {2, 3, 5};
 
-        findEnemyPair(5, arr9, arr10);
+        int[] arr13 = {2, 1, 2};
+        int[] arr14 = {2, 3, 4};
+
+        int[] arr11 = {4, 2, 3, 4, 3};
+        int[] arr12 = {4, 8, 5, 6, 4};
+
+        findEnemyPair(5, arr9, arr10);   //11
+        findEnemyPair(8, arr11, arr12);  //18
+        findEnemyPair(4, arr13, arr14);  //7
 
         //findEnemyPair(arr3, arr4);
         //findEnemyPair(arr7, arr8);
@@ -60,10 +68,10 @@ public class EnemyPair {
                     continue moveon;
                 } else {
                     addSet = st;
+                    if (addSet != null) {
+                        newSet.add(addSet);
+                    }
                 }
-            }
-            if (addSet != null) {
-                newSet.add(addSet);
             }
         }
 
@@ -112,7 +120,6 @@ public class EnemyPair {
         HashMap<Integer, Integer> set1 = new HashMap<>();
         HashMap<Integer, Integer> set2 = new HashMap<>();
         HashMap<Integer, FoePair> mapped = new HashMap<>();
-
 
         Set<FoePair> pairs = new HashSet<>();
         for (int i = 0; i < arr1.length; i++) {
