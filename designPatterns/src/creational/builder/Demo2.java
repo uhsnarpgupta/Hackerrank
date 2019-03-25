@@ -1,7 +1,7 @@
 package creational.builder;
 
 /*
-Fluent interface to propagate acrooss inheritance hierarchies, then we need recursive generics definition,
+Fluent interface to propagate across inheritance hierarchies, then we need recursive generics definition,
 so instead of person creational.builder you need a PersonBuilder that takes a type argument SELF which extends PersonBuilder
 and for every kind of inheriter you stick that inheriter as a type argument of PersonBuilder thereby propagating this
 idea of always returning a type reference to the most derived type that you're working with
