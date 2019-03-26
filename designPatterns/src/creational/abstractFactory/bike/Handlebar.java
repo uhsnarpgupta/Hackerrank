@@ -1,4 +1,4 @@
-package creational.factory.abstractFactory.bike;
+package creational.abstractFactory.bike;
 
 public abstract class Handlebar extends BikePart {
     @Override

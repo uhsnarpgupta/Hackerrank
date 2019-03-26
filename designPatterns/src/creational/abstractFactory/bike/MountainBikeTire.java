@@ -1,4 +1,4 @@
-package creational.factory.abstractFactory.bike;
+package creational.abstractFactory.bike;
 
 public class MountainBikeTire extends Tire {
     private static final String width = "WIDE";

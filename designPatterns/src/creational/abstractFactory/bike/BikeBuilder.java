@@ -1,4 +1,4 @@
-package creational.factory.abstractFactory.bike;
+package creational.abstractFactory.bike;
 
 public class BikeBuilder {
     public static void main(String[] args) {

@@ -1,13 +1,12 @@
-package creational.factory.abstractFactory.bike;
+package creational.abstractFactory.bike;
 
-public class MountainBikeFactory extends BikeFactory {
-
+public class RoadBikeFactory extends BikeFactory {
     @Override
     public BikePart create(String type) {
         if (type.equalsIgnoreCase("tire")) {
-            return new MountainBikeTire();
+            return new RoadBikeTire();
         } else if (type.equalsIgnoreCase("handlebar")) {
-            return new MountainBikeHandlebar();
+            return new RoadBikeHandlebar();
         } else {
             return null;
         }

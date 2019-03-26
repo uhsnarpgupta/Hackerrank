@@ -1,4 +1,4 @@
-package creational.factory.abstractFactory.bike;
+package creational.abstractFactory.bike;
 
 abstract class BikePart {
     abstract void getDescription();

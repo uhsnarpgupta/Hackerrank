@@ -1,4 +1,4 @@
-package creational.factory.abstractFactory;
+package creational.abstractFactory;
 
 import org.javatuples.Pair;
 import org.reflections.Reflections;

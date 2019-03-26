@@ -1,4 +1,4 @@
-package creational.factory.abstractFactory.bike;
+package creational.abstractFactory.bike;
 
 public class RoadBikeHandlebar extends Handlebar {
     private static String type = "DROP";

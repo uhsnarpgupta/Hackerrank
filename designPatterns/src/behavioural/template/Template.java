@@ -1,4 +1,4 @@
-package behavioural;
+package behavioural.template;
 
 /*
 A high level blueprint for an algorithm to be completed by inheritors
