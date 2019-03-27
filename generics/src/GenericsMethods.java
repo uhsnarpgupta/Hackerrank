@@ -19,8 +19,11 @@ public class GenericsMethods {
 
         //above statement can be written simply as
         isEqual = GenericsMethods.isEqual(g1, g2);
-        //This feature, known as type inference, allows you to invoke a generic method as an ordinary method, without specifying a type between angle brackets.
+        //This feature, known as type inference, allows you to invoke a generic method as an ordinary method,
+        //without specifying a type between angle brackets.
         //Compiler will infer the type that is needed
+
+        System.out.println(isEqual);
     }
 }
 

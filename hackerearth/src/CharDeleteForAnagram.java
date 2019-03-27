@@ -43,4 +43,28 @@ public class CharDeleteForAnagram {
         }
         return removalCount;
     }
+
+    static int charToBeRemoved(String a, String b, boolean d) {
+        int [] count = new int[26];
+        int sum = 0;
+
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+
+        if(a != null || b != null){
+            int sizeA = a.length();
+            int sizeB = b.length();
+            while(sizeA-- > 0){
+                count[a.charAt(sizeA-1)-97]++;
+            }
+            while(sizeB-- > 0){
+                count[b.charAt(sizeB-1)-97]--;
+            }
+
+            for(int i : count){
+                sum += i;
+            }
+        }
+        return sum;
+    }
 }

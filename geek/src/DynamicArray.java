@@ -1,3 +1,5 @@
+package src;
+
 // Java program deals with all operation of dynamic array
 // add, remove, resize memory of array is the main feature
 public class DynamicArray {

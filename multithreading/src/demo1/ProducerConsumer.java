@@ -15,7 +15,9 @@ public class ProducerConsumer {
                         e.printStackTrace();
                     }
                 }
+                System.out.println("Before produce: " + count);
                 buffer[count++] = 1;
+                System.out.println("After produce: " + count);
                 lock.notify();
             }
         }
@@ -31,7 +33,9 @@ public class ProducerConsumer {
                         e.printStackTrace();
                     }
                 }
+                System.out.println("Before consume: " + count);
                 buffer[--count] = 1;
+                System.out.println("After consume: " + count);
                 lock.notify();
             }
         }
@@ -52,14 +56,14 @@ public class ProducerConsumer {
         Consumer consumer = new Consumer();
 
         Runnable produceTask = () -> {
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 5; i++) {
                 producer.produce();
             }
             System.out.println("Done producing");
         };
 
         Runnable consumeTask = () -> {
-            for (int i = 0; i < 50; i++) {
+            for (int i = 0; i < 5; i++) {
                 consumer.consume();
             }
             System.out.println("Done consuming");
