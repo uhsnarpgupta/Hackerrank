@@ -27,5 +27,10 @@ public class Main {
         intTree.delete(15);
         intTree.traverseInOrder();
         System.out.println();
+
+        intTree.traverseLevelOrder();
+
+        System.out.println();
+        System.out.println(intTree.diameter(intTree.getRoot()));
     }
 }
