@@ -1,0 +1,1981 @@
+package com.marriott.app.aries.hotelinfo.components.adaptiveguestroomimages.ws.handler;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoConstants;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoWSConstants;
+import com.marriott.app.aries.hotelinfo.common.utils.HotelInfoUtil;
+import com.marriott.app.aries.hotelinfo.common.ws.handlers.ComponentWSHandler;
+import com.marriott.app.aries.hotelinfo.common.ws.handlers.page.HotelInfoPageWSHandler;
+import com.marriott.app.aries.hotelinfo.components.adaptiveguestroomimages.mapper.AdaptiveGuestRoomImagesWSResponseMapper;
+import com.marriott.app.aries.hotelinfo.models.guestroomimages.GuestRoomImages;
+import com.marriott.app.aries.hotelinfo.models.media.HotelImageInfo;
+import com.marriott.app.aries.platform.base.logs.RamLogger;
+import com.marriott.app.aries.platform.models.adaptive.ADTContentBaseVO;
+
+import play.libs.F.Promise;
+
+/**
+ * <p>
+ * This class handles the API call for Guest Room Images Component
+ * </p>
+ *
+ * @author SapientNitro
+ *
+ */
+
+public final class AdaptiveGuestRoomImagesWSHandler extends ComponentWSHandler {
+
+    private static final org.slf4j.Logger LOGGER = RamLogger.init(AdaptiveGuestRoomImagesWSHandler.class);
+
+    /**
+     * Private Constructor to prevent instantiation.
+     */
+    private AdaptiveGuestRoomImagesWSHandler() {
+    }
+
+    /**
+     * <p>
+     * This calls the ADT content handler and basic properties API and populate response in
+     * GuestRoomImages
+     * </p>
+     *
+     * @param context
+     * @return Promise<GuestRoomImages>
+     */
+
+    public static Promise<GuestRoomImages> getComponentData(JsonNode context) {
+        @SuppressWarnings("unchecked")
+        Promise<List<Object>> sequence = Promise.sequence(
+                new Promise[] { invokeAdtApi(context), invokePropertiesBasicInfoAPI(context) });
+        return sequence
+                .map(wsResponses -> AdaptiveGuestRoomImagesWSResponseMapper
+                        .mapGuestRoomImagesInfoFromWSResponse(wsResponses, context))
+                .flatMap(guestRoomImages -> processGuestRoomImageResponse(guestRoomImages))
+                .recover(throwable -> {
+                    LOGGER.error("Exception occured while invoking properties media API:{}",
+                            throwable);
+                    GuestRoomImages guestRoomImages = new GuestRoomImages();
+                    guestRoomImages.setRoomImageList(new ArrayList<HotelImageInfo>());
+                    return guestRoomImages;
+                });
+
+    }
+
+    /**
+     * <p>
+     * This method makes a call to the Adaptive content API and returns Promise<List<List
+     * <ADTContentBaseVO>>> class
+     * </p>
+     *
+     * @param context
+     * @return Promise<List<List<ADTContentBaseVO>>>
+     */
+    private static Promise<List<List<ADTContentBaseVO>>> invokeAdtApi(JsonNode context) {
+        return ComponentWSHandler.getADTComponentData(context, HotelInfoConstants.CONTENTS)
+                .recover(throwable -> {
+                    LOGGER.error("Exception occured while invoking Adaptive Content API:{}",
+                            throwable);
+                    return new ArrayList<>();
+                });
+    }
+
+    /**
+     * <p>
+     * This method calls the data-api.properties.basic-information API
+     * </p>
+     *
+     * @param context
+     * @return Promise<JsonNode>
+     */
+    private static Promise<JsonNode> invokePropertiesBasicInfoAPI(JsonNode context) {
+        return createWSRequestAndInvokeAPI(
+                new String[] { HotelInfoWSConstants.DATA_API_CONFIG_KEY,
+                        HotelInfoWSConstants.PROPERTIES_API_CONFIG_KEY,
+                        HotelInfoWSConstants.BASIC_INFO_API_CONFIG_KEY },
+                HotelInfoUtil.getNodeValueFromContext(context, HotelInfoConstants.MARSHA_CODE));
+    }
+
+    /**
+     *
+     * <p>
+     * This method sets the hotel nick name for property, checks first in page context if not found
+     * then gets it from property-fields API
+     * </p>
+     *
+     * @param guestRoomImages
+     *
+     */
+    private static Promise<GuestRoomImages> processGuestRoomImageResponse(
+            GuestRoomImages guestRoomImages) {
+        if (StringUtils.isBlank(guestRoomImages.getHotelSEONickname())) {
+            return HotelInfoPageWSHandler
+                    .retreivePropertyFieldsInfo(guestRoomImages.getMarshaCode())
+                    .map(propertyFieldsAPIResponse -> AdaptiveGuestRoomImagesWSResponseMapper
+                            .populateHotelSeoNickName(propertyFieldsAPIResponse, guestRoomImages));
+        }
+        return Promise.pure(guestRoomImages);
+    }
+
+}
+
+
+---------------------------------
+package com.marriott.app.aries.hotelinfo.components.fitnessandrecreation.ws.handler;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoConstants;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoWSConstants;
+import com.marriott.app.aries.hotelinfo.common.utils.HotelInfoUtil;
+import com.marriott.app.aries.hotelinfo.common.utils.HotelInfoWSUtil;
+import com.marriott.app.aries.hotelinfo.common.ws.handlers.ComponentWSHandler;
+import com.marriott.app.aries.hotelinfo.common.ws.utils.ComponentWSUtil;
+import com.marriott.app.aries.hotelinfo.components.spa.model.SpaDetails;
+import com.marriott.app.aries.hotelinfo.models.fitnessOfferings.FitnessCenter;
+import com.marriott.app.aries.hotelinfo.models.golf.GolfServiceDetails;
+import com.marriott.app.aries.hotelinfo.models.moreActivities.MoreActivities;
+import com.marriott.app.aries.hotelinfo.models.swimming.SwimmingDetails;
+import com.marriott.app.aries.platform.base.logs.RamLogger;
+import com.marriott.app.aries.platform.utils.common.SiteUtils;
+
+import play.libs.F.Promise;
+import play.libs.Json;
+
+/**
+ * <p>
+ * This class handles the API calls for Fitness And Recreation Tile
+ * </p>
+ *
+ * @author SapientNitro
+ *
+ */
+public final class FitnessAndRecreationWSHandler extends ComponentWSHandler {
+
+    private static final org.slf4j.Logger LOGGER = RamLogger
+            .init(FitnessAndRecreationWSHandler.class);
+
+    /**
+     * Private Constructor to prevent instantiation.
+     */
+    private FitnessAndRecreationWSHandler() {
+    }
+
+    /**
+     * <p>
+     * This calls different api i.e. local-activities, fitness, swimming, golf, navigation-links ,
+     * spa and populate data for fitness and recreation tile.
+     * </p>
+     *
+     * @param brandCode
+     * @return Promise of Map<String, Object>
+     */
+    @SuppressWarnings("unchecked")
+    public static Promise<Map<String, Object>> getComponentData(String brandCode,String colorSet) {
+        LOGGER.info("FitnessAndRecreationWSHandler started !");
+        Promise<List<Object>> sequence = Promise.sequence(
+                new Promise[] { invokeActivitiesAPI(brandCode), invokeFitnessAPI(brandCode),
+                        invokeSwimmingAPI(brandCode), invokeGolfAPI(brandCode),
+                        invokeSpaAPI(brandCode), invokeNavigationLinks(brandCode) });
+        return sequence.map(promises -> populatePromiseResponse(promises,colorSet));
+    }
+
+    /**
+     * <p>
+     * This method process api data for fitness and recreation tile.
+     * </p>
+     *
+     * @param promises
+     * @return Promise of Map<String, Object>
+     */
+    private static Map<String, Object> populatePromiseResponse(List<Object> promises,String colorSet) {
+        if (promises != null && promises.size() >= HotelInfoConstants.FIVE_AS_INT) {
+            return processAPIResponse((JsonNode) promises.get(HotelInfoConstants.ZERO_AS_INT),
+                    (JsonNode) promises.get(HotelInfoConstants.ONE_AS_INT),
+                    (JsonNode) promises.get(HotelInfoConstants.TWO_AS_INT),
+                    (JsonNode) promises.get(HotelInfoConstants.THREE_AS_INT),
+                    (JsonNode) promises.get(HotelInfoConstants.FOUR_AS_INT),
+                    (JsonNode) promises.get(HotelInfoConstants.FIVE_AS_INT),colorSet);
+
+        } else {
+            LOGGER.error("No response recieved from APIs");
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * <p>
+     * This method is used to invoke NavigationLinks API.
+     * </p>
+     *
+     * @param brandCode
+     * @return Promise of JsonNode
+     */
+    private static Promise<JsonNode> invokeNavigationLinks(String brandCode) {
+        LOGGER.info("inside FitnessAndRecreationWSHandler.invokeNavigationLinks");
+        return createWSRequestAndInvokeAPI(new String[] { HotelInfoWSConstants.DATA_API_CONFIG_KEY,
+                HotelInfoWSConstants.PROPERTIES_NAVIGATION_CONFIG_KEY }, brandCode);
+    }
+
+    /**
+     * <p>
+     * This method is used to invoke Golf API.
+     * </p>
+     *
+     * @param brandCode
+     * @return Promise of JsonNode
+     */
+    private static Promise<JsonNode> invokeGolfAPI(String brandCode) {
+        LOGGER.info("inside FitnessAndRecreationWSHandler.invokeGolfAPI");
+        // call Golf API for English locale
+        if (SiteUtils.isEnglish()) {
+            return createWSRequestAndInvokeAPI(
+                    new String[] { HotelInfoWSConstants.DATA_API_CONFIG_KEY,
+                            HotelInfoWSConstants.PROPERTIES_API_CONFIG_KEY,
+                            HotelInfoWSConstants.PROPERTIES_API_GOLF_CONFIG_KEY },
+                    brandCode);
+        } else {
+            LOGGER.error("current request is from non-english locale.");
+            return Promise.pure(Json.newObject());
+        }
+    }
+
+    /**
+     * <p>
+     * This method is used to invoke Spa API.
+     * </p>
+     *
+     * @param brandCode
+     * @return Promise of JsonNode
+     */
+    private static Promise<JsonNode> invokeSpaAPI(String brandCode) {
+        LOGGER.info("inside FitnessAndRecreationWSHandler.invokeSpaAPI");
+        // call spa API for English locale
+        if (SiteUtils.isEnglish()) {
+            return createWSRequestAndInvokeAPI(
+                    new String[] { HotelInfoWSConstants.DATA_API_CONFIG_KEY,
+                            HotelInfoWSConstants.PROPERTIES_API_CONFIG_KEY,
+                            HotelInfoWSConstants.PROPERTIES_API_SPA_CONFIG_KEY },
+                    brandCode);
+        } else {
+            LOGGER.error("current request is from non-english locale.");
+            return Promise.pure(Json.newObject());
+        }
+    }
+
+    /**
+     * <p>
+     * This method is used to invoke swimming API.
+     * </p>
+     *
+     * @param brandCode
+     * @return Promise of JsonNode
+     */
+    private static Promise<JsonNode> invokeSwimmingAPI(String brandCode) {
+        LOGGER.info("inside FitnessAndRecreationWSHandler.invokeSwimmingAPI");
+        return createWSRequestAndInvokeAPI(new String[] { HotelInfoWSConstants.DATA_API_CONFIG_KEY,
+                HotelInfoWSConstants.PROPERTIES_API_CONFIG_KEY,
+                HotelInfoWSConstants.PROPERTIES_SWIMMING_API_CONFIG_KEY }, brandCode);
+    }
+
+    /**
+     * <p>
+     * This method is used to invoke fitness API.
+     * </p>
+     *
+     * @param brandCode
+     * @return Promise of JsonNode
+     */
+    private static Promise<JsonNode> invokeFitnessAPI(String brandCode) {
+        LOGGER.info("inside FitnessAndRecreationWSHandler.invokeFitnessAPI");
+        return createWSRequestAndInvokeAPI(new String[] { HotelInfoWSConstants.DATA_API_CONFIG_KEY,
+                HotelInfoWSConstants.PROPERTIES_API_CONFIG_KEY,
+                HotelInfoWSConstants.PROPERTIES_API_FITNESS_CONFIG_KEY }, brandCode);
+    }
+
+    /**
+     * <p>
+     * This method is used to invoke local-activities API.
+     * </p>
+     *
+     * @param brandCode
+     * @return Promise of JsonNode
+     */
+    private static Promise<JsonNode> invokeActivitiesAPI(String brandCode) {
+        LOGGER.info("inside FitnessAndRecreationWSHandler.invokeActivitiesAPI");
+        return createWSRequestAndInvokeAPI(
+                new String[] { HotelInfoWSConstants.DATA_API_CONFIG_KEY,
+                        HotelInfoWSConstants.PROPERTIES_API_CONFIG_KEY,
+                        HotelInfoWSConstants.PROPERTIES_API_MORE_ACTIVITIES_CONFIG_KEY },
+                brandCode);
+    }
+
+    /**
+     * <p>
+     * This method is used to process all Api response.
+     * </p>
+     *
+     * @param activityApiResponse
+     * @param fitnessApiResponse
+     * @param swimmingApiResponse
+     * @param golfApiResponse
+     * @param spaApiResponse
+     * @param navigationLinksResponse
+     * @return fitnessAndRecreationMap
+     */
+    private static Map<String, Object> processAPIResponse(JsonNode activityApiResponse,
+            JsonNode fitnessApiResponse, JsonNode swimmingApiResponse, JsonNode golfApiResponse,
+            JsonNode spaApiResponse, JsonNode navigationLinksResponse,String colorSet) {
+        LOGGER.info("inside FitnessAndRecreationWSHandler.processAPIResponse ");
+        Map<String, Object> fitnessAndRecreationMap = new LinkedHashMap<>();
+        processActivityResponse(activityApiResponse, fitnessAndRecreationMap);
+        processFitnessResponse(fitnessApiResponse, fitnessAndRecreationMap);
+        processSwimmingResponse(swimmingApiResponse, fitnessAndRecreationMap);
+        processGolfResponse(golfApiResponse, fitnessAndRecreationMap);
+        processSpaResponse(spaApiResponse, fitnessAndRecreationMap);
+        processNavigationLinks(navigationLinksResponse, fitnessAndRecreationMap);
+
+        fitnessAndRecreationMap.put(HotelInfoConstants.DISPLAY_TILE_FLAG_KEY,
+                hasNoneEmptyActivityFitnessMap(fitnessAndRecreationMap)
+                        || hasNoneEmptySwimmingSpaGolfMap(fitnessAndRecreationMap));
+        fitnessAndRecreationMap.put(HotelInfoConstants.TILE_COLOR_SET,colorSet);
+
+        return fitnessAndRecreationMap;
+    }
+
+    /**
+     * <p>
+     * This method is used to check if activity map and fitness map is non empty.
+     * </p>
+     *
+     * @param fitnessAndRecreationMap
+     * @return boolean
+     */
+    @SuppressWarnings("rawtypes")
+    private static boolean hasNoneEmptyActivityFitnessMap(
+            Map<String, Object> fitnessAndRecreationMap) {
+        return CollectionUtils
+                .isNotEmpty((Collection) fitnessAndRecreationMap
+                        .get(HotelInfoConstants.ACTIVITY_MAP_KEY))
+                || CollectionUtils.isNotEmpty((Collection) fitnessAndRecreationMap
+                        .get(HotelInfoConstants.FITNESS_MAP_KEY));
+    }
+
+    /**
+     * <p>
+     * This method is used to check if swimming map, golf map and spa map is non empty.
+     * </p>
+     *
+     * @param fitnessAndRecreationMap
+     * @return boolean
+     */
+    @SuppressWarnings("rawtypes")
+    private static boolean hasNoneEmptySwimmingSpaGolfMap(
+            Map<String, Object> fitnessAndRecreationMap) {
+        return CollectionUtils
+                .isNotEmpty((Collection) fitnessAndRecreationMap
+                        .get(HotelInfoConstants.SWIMMING_MAP_KEY))
+                || CollectionUtils.isNotEmpty(
+                        (Collection) fitnessAndRecreationMap.get(HotelInfoConstants.SPA_MAP_KEY))
+                || CollectionUtils.isNotEmpty(
+                        (Collection) fitnessAndRecreationMap.get(HotelInfoConstants.GOLF_MAP_KEY));
+    }
+
+    /**
+     * <p>
+     * This method is used to process golf Api response.
+     * </p>
+     *
+     * @param golfApiResponse
+     * @param fitnessAndRecreationMap
+     */
+    private static void processGolfResponse(JsonNode golfApiResponse,
+            Map<String, Object> fitnessAndRecreationMap) {
+        LOGGER.info("FitnessAndRecreationWSHandler.processGolfResponse : START");
+        List<GolfServiceDetails> golfCourseList = new ArrayList<>();
+        List<GolfServiceDetails> golfClubList = new ArrayList<>();
+        if (ComponentWSUtil.isJsonNodeNotEmpty(golfApiResponse)) {
+
+            JsonNode golfNode = ComponentWSUtil.retrieveNodeValueByPath(golfApiResponse,
+                    HotelInfoWSConstants.RESPONSE_NODE_GOLF);
+            if (ComponentWSUtil.isValidNotEmptyArrayNode(golfNode)) {
+                golfNode.forEach(golfResponseNode -> populateGolfResponse(golfResponseNode,
+                        golfCourseList, golfClubList));
+            }
+        }
+
+        populateGolfDetailsInMap(fitnessAndRecreationMap, golfCourseList, golfClubList);
+        LOGGER.debug("FitnessAndRecreationWSHandler.processGolfResponse : END");
+    }
+
+    /**
+     * <p>
+     * This method is used to populate golf List with club and its corresponding courses.
+     * </p>
+     *
+     * @param fitnessAndRecreationMap
+     * @param golfCourseList
+     * @param golfClubList
+     */
+    private static void populateGolfDetailsInMap(Map<String, Object> fitnessAndRecreationMap,
+            List<GolfServiceDetails> golfCourseList, List<GolfServiceDetails> golfClubList) {
+        Map<String, List<GolfServiceDetails>> golfServiceDetailsMap = new HashMap<>();
+        for (GolfServiceDetails golfClubServiceDetails : golfClubList) {
+            populateGolfMapDetails(golfServiceDetailsMap, golfCourseList, golfClubServiceDetails);
+        }
+        if (MapUtils.isNotEmpty(golfServiceDetailsMap)) {
+            fitnessAndRecreationMap.put(HotelInfoConstants.GOLF_MAP_KEY, golfServiceDetailsMap);
+        }
+    }
+
+    /**
+     * <p>
+     * Populate golf map details.
+     * </p>
+     *
+     * @param golfMap
+     *            the golf map
+     * @param golfCourseList
+     *            the golf course list
+     * @param golfClubServiceDetails
+     *            the golf club service details
+     */
+    private static void populateGolfMapDetails(
+            Map<String, List<GolfServiceDetails>> golfServiceDetailsMap,
+            List<GolfServiceDetails> golfCourseList, GolfServiceDetails golfClubServiceDetails) {
+        List<GolfServiceDetails> golfCourseNameList = new ArrayList<>();
+        for (GolfServiceDetails golfCourseServiceDetails : golfCourseList) {
+            if (StringUtils.equals(golfClubServiceDetails.getId(),
+                    golfCourseServiceDetails.getParentId())) {
+                golfCourseNameList.add(golfCourseServiceDetails);
+            }
+        }
+        if (CollectionUtils.isEmpty(golfCourseNameList)) {
+            LOGGER.debug("No child course available for service {}",
+                    golfClubServiceDetails.getServiceName());
+            golfClubServiceDetails.setParentCourse(Boolean.TRUE);
+            golfCourseNameList.add(golfClubServiceDetails);
+        }
+        golfServiceDetailsMap.put(golfClubServiceDetails.getServiceName(), golfCourseNameList);
+    }
+
+    /**
+     * <p>
+     * This method is used to process swimming Api response.
+     * </p>
+     *
+     * @param swimmingApiResponse
+     * @param fitnessAndRecreationMap
+     */
+    private static void processSwimmingResponse(JsonNode swimmingApiResponse,
+            Map<String, Object> fitnessAndRecreationMap) {
+        LOGGER.info("FitnessAndRecreationWSHandler.processSwimmingResponse : START");
+        if (ComponentWSUtil.isJsonNodeNotEmpty(swimmingApiResponse)) {
+            List<SwimmingDetails> swimmingList = new ArrayList<>();
+
+            JsonNode swimmingNode = ComponentWSUtil.retrieveNodeValueByPath(swimmingApiResponse,
+                    HotelInfoWSConstants.RESPONSE_NODE_SWIMMING);
+            if (ComponentWSUtil.isValidNotEmptyArrayNode(swimmingNode)) {
+                swimmingNode.forEach(swimmingResponseNode -> populateSwimmingResponse(
+                        swimmingResponseNode, swimmingList));
+            }
+            fitnessAndRecreationMap.put(HotelInfoConstants.SWIMMING_MAP_KEY, swimmingList);
+        }
+        LOGGER.info("FitnessAndRecreationWSHandler.processSwimmingResponse : END");
+    }
+
+    /**
+     * <p>
+     * This method is used to process fitness Api response.
+     * </p>
+     *
+     * @param fitnessApiResponse
+     * @param fitnessAndRecreationMap
+     */
+    private static void processFitnessResponse(JsonNode fitnessApiResponse,
+            Map<String, Object> fitnessAndRecreationMap) {
+        LOGGER.info("FitnessAndRecreationWSHandler.processFitnessResponse : START");
+        if (ComponentWSUtil.isJsonNodeNotEmpty(fitnessApiResponse)) {
+            JsonNode fitnessNode = ComponentWSUtil.retrieveNodeValueByPath(fitnessApiResponse,
+                    HotelInfoWSConstants.FITNESS_NODE_KEY);
+            List<FitnessCenter> fitnessCentreList = new ArrayList<>();
+
+            if (ComponentWSUtil.isValidNotEmptyArrayNode(fitnessNode)) {
+                fitnessNode
+                        .forEach(fitnessResponseNode -> populateFitnessResponse(fitnessResponseNode,
+                                fitnessCentreList));
+            }
+            fitnessAndRecreationMap.put(HotelInfoConstants.FITNESS_MAP_KEY, fitnessCentreList);
+            LOGGER.info("FitnessAndRecreationWSHandler.processFitnessResponse : End");
+        }
+    }
+
+    /**
+     * <p>
+     * This method is used to process activity Api response.
+     * </p>
+     *
+     * @param activityApiResponse
+     * @param fitnessAndRecreationMap
+     */
+    private static void processActivityResponse(JsonNode activityApiResponse,
+            Map<String, Object> fitnessAndRecreationMap) {
+        LOGGER.info("FitnessAndRecreationWSHandler.processActivityResponse : START");
+        if (ComponentWSUtil.isJsonNodeNotEmpty(activityApiResponse)) {
+            JsonNode localActivitiesNode = ComponentWSUtil.retrieveNodeValueByPath(
+                    activityApiResponse, HotelInfoWSConstants.RESPONSE_NODE_LOCAL_ACTIVITIES);
+            List<MoreActivities> activityList = new ArrayList<>();
+            if (ComponentWSUtil.isValidNotEmptyArrayNode(localActivitiesNode)) {
+                localActivitiesNode.forEach(activityResponseNode -> populateActivityResponse(
+                        activityResponseNode, activityList));
+            }
+            fitnessAndRecreationMap.put(HotelInfoConstants.ACTIVITY_MAP_KEY, activityList);
+        }
+        LOGGER.info("FitnessAndRecreationWSHandler.processActivityResponse : END");
+    }
+
+    /**
+     * <p>
+     * This method is used to process navigationLinks Api response.
+     * </p>
+     *
+     * @param navigationLinksResponse
+     * @param fitnessAndRecreationMap
+     */
+    private static void processNavigationLinks(JsonNode navigationLinksResponse,
+            Map<String, Object> fitnessAndRecreationMap) {
+        LOGGER.info("FitnessAndRecreationWSHandler.processNavigationResponse : START");
+        if (ComponentWSUtil.isJsonNodeNotEmpty(navigationLinksResponse)) {
+            JsonNode navigationLinks = ComponentWSUtil.retrieveNodeValueByPath(
+                    ComponentWSUtil.getNodeFromAggregatedWSResponse(navigationLinksResponse,
+                            HotelInfoWSConstants.PROPERTIES_NAVIGATION_LINKS_CONFIG_KEY),
+                    HotelInfoWSConstants.RESPONSE_NODE_NAVIGATION_LINKS);
+            if (ComponentWSUtil.isValidNotEmptyArrayNode(navigationLinks)) {
+                processNavLinkNode(fitnessAndRecreationMap, navigationLinks);
+            }
+        }
+        LOGGER.info("FitnessAndRecreationWSHandler.processNavigationResponse : END");
+    }
+
+    /**
+     * <p>
+     * This method is used to process NavigationLinks response in List.
+     * </p>
+     *
+     * @param fitnessAndRecreationMap
+     * @param navigationLinks
+     */
+    private static void processNavLinkNode(Map<String, Object> fitnessAndRecreationMap,
+            JsonNode navigationLinks) {
+        for (JsonNode navigationLinksNode : navigationLinks) {
+            if (StringUtils.equals(
+                    HotelInfoWSUtil.getStringConfigValue(
+                            HotelInfoConstants.NAVIGATION_LINK_HXFITNESS_CODE_CONFIG_KEY),
+                    ComponentWSUtil.getNodeValue(navigationLinksNode,
+                            HotelInfoWSConstants.RESPONSE_NODE_TYPE_CODE))) {
+                fitnessAndRecreationMap.put(HotelInfoConstants.NAVIGATION_LINKS_MAP_KEY,
+                        StringUtils.join(
+                                ComponentWSUtil.getStringNodeValue(navigationLinksNode,
+                                        HotelInfoWSConstants.RESPONSE_NODE_URL),
+                                HotelInfoConstants.SLASH_STRING));
+                break;
+            }
+        }
+    }
+
+    /**
+     * <p>
+     * This method is used to process golf response in List.
+     * </p>
+     *
+     * @param golfResponseNode
+     * @param golfCourseList
+     * @param golfClubList
+     */
+    private static void populateGolfResponse(JsonNode golfResponseNode,
+            List<GolfServiceDetails> golfCourseList, List<GolfServiceDetails> golfClubList) {
+        LOGGER.info("FitnessAndRecreationWSHandler.processGolfResponse : START");
+        GolfServiceDetails golfServiceDetails = new GolfServiceDetails();
+
+        String responseGolfId = ComponentWSUtil.getNodeValue(golfResponseNode,
+                HotelInfoWSConstants.REQUEST_NODE_ID);
+
+        String responseGolfParentId = ComponentWSUtil.getNodeValue(golfResponseNode,
+                HotelInfoWSConstants.REQUEST_NODE_PARENT_ID);
+
+        if (ComponentWSUtil.getBooleanNodeValue(golfResponseNode,
+                HotelInfoWSConstants.RESPONSE_NODE_ON_PROPERTY)) {
+            // set name in the model and add it to onSite list
+            golfServiceDetails.setServiceName(getActivityName(golfResponseNode));
+            golfServiceDetails.setId(responseGolfId);
+            golfServiceDetails.setParentId(responseGolfParentId);
+            addGolfInList(golfCourseList, golfClubList, golfServiceDetails);
+        } else {
+            // set name in the model
+            golfServiceDetails.setServiceName(getActivityName(golfResponseNode));
+            golfServiceDetails.setId(responseGolfId);
+            golfServiceDetails.setParentId(responseGolfParentId);
+            golfServiceDetails.setDistance(HotelInfoUtil.distanceConversionBasedOnLocale(
+                    ComponentWSUtil.getDoubleObjectNodeValue(golfResponseNode,
+                            HotelInfoWSConstants.RESPONSE_NODE_DISTANCE_VALUE),
+                    ComponentWSUtil.getStringNodeValue(golfResponseNode,
+                            HotelInfoWSConstants.RESPONSE_NODE_DISTANCE_UNIT_DESCRIPTION)));
+            addGolfInList(golfCourseList, golfClubList, golfServiceDetails);
+
+        }
+        LOGGER.info("FitnessAndRecreationWSHandler.processGolfResponse : END");
+
+    }
+
+    /**
+     * <p>
+     * This method is used to process golf response in List and add club and courses to its
+     * corresponding list.
+     * </p>
+     *
+     * @param golfCourseList
+     * @param golfClubList
+     * @param golfServiceDetails
+     */
+    private static void addGolfInList(List<GolfServiceDetails> golfCourseList,
+            List<GolfServiceDetails> golfClubList, GolfServiceDetails golfServiceDetails) {
+        if (StringUtils.isBlank(golfServiceDetails.getParentId())) {
+            golfClubList.add(golfServiceDetails);
+        } else {
+            golfCourseList.add(golfServiceDetails);
+        }
+
+    }
+
+    /**
+     * <p>
+     * This method is used to process swimming response in List.
+     * </p>
+     *
+     * @param spaResponseNode
+     * @param swimmingList
+     */
+    private static void populateSwimmingResponse(JsonNode spaResponseNode,
+            List<SwimmingDetails> swimmingList) {
+        LOGGER.info("FitnessAndRecreationWSHandler.populateSwimmingResponse : START");
+        SwimmingDetails swimmingDetails = new SwimmingDetails();
+        if (ComponentWSUtil.getBooleanNodeValue(spaResponseNode,
+                HotelInfoWSConstants.RESPONSE_NODE_ON_PROPERTY)) {
+            swimmingDetails.setPoolName(ComponentWSUtil.getStringNodeValue(spaResponseNode,
+                    HotelInfoWSConstants.RESPONSE_NODE_NAME));
+            swimmingList.add(swimmingDetails);
+        }
+        LOGGER.info("FitnessAndRecreationWSHandler.populateSwimmingResponse : END");
+    }
+
+    /**
+     * <p>
+     * This method is used to process fitness response in List.
+     * </p>
+     *
+     * @param fitnessResponseNode
+     * @param fitnessCentreList
+     */
+    private static void populateFitnessResponse(JsonNode fitnessResponseNode,
+            List<FitnessCenter> fitnessCentreList) {
+        FitnessCenter fitnessCentre = new FitnessCenter();
+        if (ComponentWSUtil.getBooleanNodeValue(fitnessResponseNode,
+                HotelInfoWSConstants.RESPONSE_NODE_ON_PROPERTY)) {
+            fitnessCentre.setName(ComponentWSUtil.getStringNodeValue(fitnessResponseNode,
+                    HotelInfoWSConstants.RESPONSE_NODE_NAME));
+            fitnessCentreList.add(fitnessCentre);
+        }
+    }
+
+    /**
+     * <p>
+     * This method is used to process activity response in List.
+     * </p>
+     *
+     * @param localActivitiesNode
+     * @param activityList
+     */
+    private static void populateActivityResponse(JsonNode localActivitiesNode,
+            List<MoreActivities> activityList) {
+        LOGGER.info("FitnessAndRecreationWSHandler.populateActivityResponse : START");
+        MoreActivities moreActivities = new MoreActivities();
+        if (ComponentWSUtil.getBooleanNodeValue(localActivitiesNode,
+                HotelInfoWSConstants.RESPONSE_NODE_ON_PROPERTY)) {
+            moreActivities.setName(getActivityName(localActivitiesNode));
+            activityList.add(moreActivities);
+        } else {
+            moreActivities.setName(getActivityName(localActivitiesNode));
+            moreActivities.setDistance(HotelInfoUtil.distanceConversionBasedOnLocale(
+                    ComponentWSUtil.getDoubleObjectNodeValue(localActivitiesNode,
+                            HotelInfoWSConstants.RESPONSE_NODE_DISTANCE_VALUE),
+                    ComponentWSUtil.getStringNodeValue(localActivitiesNode,
+                            HotelInfoWSConstants.RESPONSE_NODE_DISTANCE_UNIT_DESCRIPTION)));
+
+            activityList.add(moreActivities);
+        }
+        LOGGER.info(" FitnessAndRecreationWSHandler.populateActivityResponse : END");
+
+    }
+
+    /**
+     * <p>
+     * This method gets the 'name' node from the response Json localActivitiesNode
+     * </p>
+     *
+     * @param localActivitiesNode
+     * @return String
+     */
+    private static String getActivityName(JsonNode localActivitiesNode) {
+        return ComponentWSUtil.getStringNodeValue(localActivitiesNode,
+                HotelInfoWSConstants.RESPONSE_NODE_NAME);
+    }
+
+    /**
+     * <p>
+     * This method is used to process spa response in List.
+     * </p>
+     *
+     * @param spaApiResponse
+     * @param fitnessAndRecreationMap
+     */
+    private static void processSpaResponse(JsonNode spaApiResponse,
+            Map<String, Object> fitnessAndRecreationMap) {
+        if (ComponentWSUtil.isJsonNodeNotEmpty(spaApiResponse)) {
+            List<SpaDetails> spaList = new ArrayList<>();
+            JsonNode spaNode = ComponentWSUtil.retrieveNodeValueByPath(spaApiResponse,
+                    HotelInfoWSConstants.RESPONSE_NODE_SPA);
+            if (ComponentWSUtil.isValidArrayNode(spaNode)) {
+                spaNode.forEach(spaResponseNode -> populateSpaResponse(spaResponseNode, spaList));
+            }
+            fitnessAndRecreationMap.put(HotelInfoConstants.SPA_MAP_KEY, spaList);
+        }
+    }
+
+    /**
+     * <p>
+     * This method is used to process spa response and put in List.
+     * </p>
+     *
+     * @param spaResponseNode
+     * @param spaList
+     */
+    private static void populateSpaResponse(JsonNode spaResponseNode, List<SpaDetails> spaList) {
+        if (ComponentWSUtil.getBooleanNodeValue(spaResponseNode,
+                HotelInfoWSConstants.RESPONSE_NODE_ON_PROPERTY)) {
+            SpaDetails spaDetails = new SpaDetails();
+            spaDetails.setAppointmentRequired(ComponentWSUtil.getBooleanNodeValue(spaResponseNode,
+                    HotelInfoWSConstants.RESPONSE_NODE_APPOINTMENT_REQUIRED));
+            spaDetails.setName(ComponentWSUtil.getStringNodeValue(spaResponseNode,
+                    HotelInfoWSConstants.RESPONSE_NODE_NAME));
+
+            spaList.add(spaDetails);
+        }
+
+    }
+
+}
+-----------------------------------
+package com.marriott.app.aries.hotelinfo.controllers;
+
+import static org.fest.assertions.Assertions.assertThat;
+import static play.mvc.Http.Status.OK;
+import static play.test.Helpers.charset;
+import static play.test.Helpers.contentAsString;
+import static play.test.Helpers.contentType;
+import static play.test.Helpers.status;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoConstants;
+import com.marriott.app.aries.hotelinfo.common.models.ComponentResponse;
+import com.marriott.app.aries.hotelinfo.components.dealsteaser.controller.DealsTeaserController;
+import com.marriott.app.aries.hotelinfo.components.dealsteaser.service.DealsTeaserService;
+import com.marriott.app.aries.platform.component.models.AriesComponent;
+
+import play.Application;
+import play.Configuration;
+import play.Play;
+import play.libs.F.Promise;
+import play.libs.Json;
+import play.mvc.Http;
+import play.mvc.Http.Context;
+import play.mvc.Result;
+
+/**
+ * Test class for {@link DealsTeaserController} controller class Intended to test controller for
+ * Deals Teaser
+ *
+ * @author SapientNitro
+ */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ Play.class, Http.Context.class, DealsTeaserService.class })
+public class DealsTeaserControllerTest {
+
+    private static final String HotelInfo_CACHE_NAME = "AriesHotelInfo";
+    private static final String SESSION_TOKEN = "609dc69-4a4c-bd7-9bb5-23e6726279a";
+    private static final String VERSION = "0.1";
+    private static final int TEST_TIMEOUT = 10000;
+    private static final String TEMPLATE_NAME_STR = "template";
+    private static final String DATA_STR = "data";
+    private static final String DEALS_TEASER_COMPONENT_NAME = "dealsTeaser";
+    private static final String DEALS_TEASER_TEMPLATE_NAME = "dealsTeaser.handlebars";
+
+    private Http.RequestBody mockedRequestBody;
+
+    @Before
+    public void setup() throws Exception {
+        PowerMockito.mockStatic(Play.class);
+        Application app = Mockito.mock(Application.class);
+        PowerMockito.when(Play.application()).thenReturn(app);
+        Configuration config = Mockito.mock(Configuration.class);
+        PowerMockito.when(app.configuration()).thenReturn(config);
+        PowerMockito.when(config.getString("aries-hotelinfo-cache-name"))
+                .thenReturn(HotelInfo_CACHE_NAME);
+
+        PowerMockito.mockStatic(Http.Context.class);
+        PowerMockito.mockStatic(DealsTeaserService.class);
+        Context mockedContext = Mockito.mock(Context.class);
+        Http.Request mockedRequest = Mockito.mock(Http.Request.class);
+        mockedRequestBody = Mockito.mock(Http.RequestBody.class);
+        PowerMockito.when(Http.Context.current()).thenReturn(mockedContext);
+        PowerMockito.when(mockedContext.request()).thenReturn(mockedRequest);
+        PowerMockito.when(mockedRequest.body()).thenReturn(mockedRequestBody);
+    }
+
+    @Test
+    public void getHotelDealsSuccess() {
+        PowerMockito.when(mockedRequestBody.asJson()).thenReturn(getRequestContextJSON());
+
+        Promise<ComponentResponse> hotelDealsPromise = getSuccessComponentResponsePromise();
+        PowerMockito.when(DealsTeaserService.getDealsTeaser(Mockito.anyObject()))
+                .thenReturn(hotelDealsPromise);
+        Promise<Result> promiseResult = DealsTeaserController.getDealsTeaser();
+        Result result = promiseResult.get(TEST_TIMEOUT);
+
+        // Assertions
+        assertThat(status(result)).isEqualTo(OK);
+        assertThat(contentType(result)).isEqualTo("application/json");
+        assertThat(charset(result)).isEqualTo("utf-8");
+
+        // Verify the Json Response
+        String contentAsString = contentAsString(result);
+        assertThat(contentAsString).contains(SESSION_TOKEN);
+        assertThat(contentAsString).contains(HotelInfoConstants.SUCCESS_RESPONSE_MESSAGE_CODE);
+        assertThat(contentAsString).contains(HotelInfoConstants.SUCCESS_RESPONSE_MESSAGE);
+        assertThat(contentAsString).contains(TEMPLATE_NAME_STR);
+        assertThat(contentAsString).contains(DATA_STR);
+    }
+
+
+    private ObjectNode getRequestContextJSON() {
+        ObjectNode node = Json.newObject();
+        node.put(HotelInfoConstants.SESSION_TOKEN_REQUEST_PARAM, SESSION_TOKEN);
+        ObjectNode contextNode = node.putObject(HotelInfoConstants.CONTEXT_REQUEST_PARAM);
+        contextNode.put(HotelInfoConstants.VERSION_REQUEST_PARAM, VERSION);
+        return node;
+    }
+
+    private Promise<ComponentResponse> getSuccessComponentResponsePromise() {
+        return Promise.promise(() -> {
+            return getSuccessComponentResponse(DEALS_TEASER_COMPONENT_NAME,
+                    DEALS_TEASER_TEMPLATE_NAME);
+        });
+    }
+
+    private ComponentResponse getSuccessComponentResponse(String componentName,
+            String templateName) {
+        ComponentResponse response = new ComponentResponse();
+        response.setStatus(HotelInfoConstants.SUCCESS_STRING);
+        response.setMessage(HotelInfoConstants.SUCCESS_RESPONSE_MESSAGE);
+        response.setMessageCode(HotelInfoConstants.SUCCESS_RESPONSE_MESSAGE_CODE);
+        response.setSessionToken(SESSION_TOKEN);
+        AriesComponent component = new AriesComponent(componentName, templateName, null,
+                Json.newObject());
+        response.setComponent(component);
+        return response;
+    }
+
+}
+
+-----------------------------
+package com.marriott.app.aries.hotelinfo.services;
+
+import static org.fest.assertions.Assertions.assertThat;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.marriott.app.aries.hotelinfo.WithHotelInfoApplication;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoConstants;
+import com.marriott.app.aries.hotelinfo.common.models.ComponentRequest;
+import com.marriott.app.aries.hotelinfo.common.models.ComponentResponse;
+import com.marriott.app.aries.hotelinfo.common.session.HotelInfoSession;
+import com.marriott.app.aries.hotelinfo.common.ws.handlers.ComponentWSHandler;
+import com.marriott.app.aries.hotelinfo.components.dealsteaser.service.DealsTeaserService;
+import com.marriott.app.aries.platform.component.ComponentManager;
+import com.marriott.app.aries.platform.component.models.AriesComponent;
+import com.marriott.app.aries.platform.models.adaptive.ADTContentBaseVO;
+import com.marriott.app.aries.platform.models.adaptive.ADTContentType;
+import com.marriott.app.aries.platform.models.adaptive.ADTImageVO;
+
+import play.libs.F.Promise;
+import play.libs.Json;
+
+/**
+ * This is a unit test class for {@link DealsTeaserService}.
+ */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({ ComponentManager.class, ComponentWSHandler.class  })
+@PowerMockIgnore("javax.net.ssl.*")
+public class DealsTeaserServiceTest extends WithHotelInfoApplication {
+
+    private static final String SESSION_TOKEN = "609dc69-4a4c-bd7-9bb5-23e6726279a";
+    private static final String DEALS_TEASER_COMPONENT_NAME = "dealsTeaser";
+    private static final String DEALS_TEASER_TEMPLATE_NAME = "dealsTeaser.hbs";
+
+    /**
+     * To test the private constructor of HotelDealsService.
+     */
+    @Test
+    public void testConstructorIsPrivate() throws NoSuchMethodException, IllegalAccessException,
+            InvocationTargetException, InstantiationException {
+        Constructor<DealsTeaserService> constructor = DealsTeaserService.class
+                .getDeclaredConstructor();
+        assertThat(Modifier.isPrivate(constructor.getModifiers())).isEqualTo(true);
+        constructor.setAccessible(true);
+        constructor.newInstance();
+    }
+
+    /**
+     * <p>
+     * Test for Deals Teaser on success.
+     * </p>
+     *
+     */
+    @Test
+    public void testGetDealsTeaser() {
+
+        performCommonMocking();
+
+        AriesComponent component = new AriesComponent(DEALS_TEASER_COMPONENT_NAME,
+                DEALS_TEASER_TEMPLATE_NAME, null, Json.newObject());
+
+        Promise<AriesComponent> compPromise = Promise.promise(() -> component);
+
+        PowerMockito.when(ComponentManager.getComponent(Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyObject())).thenReturn(compPromise);
+
+        List<List<ADTContentBaseVO>> adtResponse = new ArrayList<>();
+        List<ADTContentBaseVO> adtContentList = new ArrayList<>();
+
+        ADTContentBaseVO content = new ADTImageVO();
+        content.setType(ADTContentType.ADT_ARTICLE);
+        content.setContentName("embed-website_copy");
+        adtContentList.add(content);
+        adtResponse.add(adtContentList);
+        Promise<List<List<ADTContentBaseVO>>> contentPromise = Promise.promise(() -> adtResponse);
+
+        PowerMockito.when(
+                ComponentWSHandler.getADTComponentData(Mockito.anyObject(), Mockito.anyString()))
+                .thenReturn(contentPromise);
+
+        ComponentRequest ariesRequest = new ComponentRequest(SESSION_TOKEN, null,
+                getTestContextData());
+        HotelInfoSession session = new HotelInfoSession();
+        session.setAttribute(HotelInfoConstants.SESSION_PROPERTY_ID_PARAM_NAME, "phxcb");
+
+        Promise<ComponentResponse> responsePromise = DealsTeaserService
+                .getDealsTeaser(ariesRequest);
+
+        responsePromise.onRedeem((response) -> {
+            // Assertions
+            assertThat(response).isNotNull();
+            assertThat(response.getStatus()).isEqualTo(HotelInfoConstants.SUCCESS_STRING);
+            assertThat(response.getMessage())
+                    .isEqualTo(HotelInfoConstants.SUCCESS_RESPONSE_MESSAGE);
+            assertThat(response.getMessageCode())
+                    .isEqualTo(HotelInfoConstants.SUCCESS_RESPONSE_MESSAGE_CODE);
+            assertThat(response.getSessionToken()).isEqualTo(SESSION_TOKEN);
+            assertThat(response.getComponent().getName()).isEqualTo(DEALS_TEASER_COMPONENT_NAME);
+            assertThat(response.getComponent().getTemplate()).isEqualTo(DEALS_TEASER_TEMPLATE_NAME);
+        });
+    }
+
+    private void performCommonMocking() {
+        PowerMockito.mockStatic(ComponentManager.class);
+        PowerMockito.mockStatic(ComponentWSHandler.class);
+    }
+
+    /**
+     * <p>
+     * This method sets the context data.
+     * </p>
+     *
+     * @return contextNode contextNode
+     */
+
+    private JsonNode getTestContextData() {
+        ObjectNode contextNode = Json.newObject();
+        contextNode.put("v", "0.1");
+        contextNode.put("siteId", "");
+        contextNode.put("siteName", "english");
+        contextNode.put("localeKey", "en_US");
+        contextNode.put("hotelNickNme", "new-york-marriott-marquis");
+        contextNode.put("marshaCode", "nycmq");
+        return contextNode;
+    }
+
+}
+
+--------------------
+package com.marriott.app.aries.hotelinfo.components.mediaviewer.ws.handler;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoConstants;
+import com.marriott.app.aries.hotelinfo.common.constants.HotelInfoWSConstants;
+import com.marriott.app.aries.hotelinfo.common.utils.HotelInfoUtil;
+import com.marriott.app.aries.hotelinfo.common.utils.HotelInfoWSUtil;
+import com.marriott.app.aries.hotelinfo.common.ws.handlers.ComponentWSHandler;
+import com.marriott.app.aries.hotelinfo.components.mediaviewer.helper.MediaViewerHelper;
+import com.marriott.app.aries.hotelinfo.models.mediaviewer.Media;
+import com.marriott.app.aries.hotelinfo.models.mediaviewer.MediaDetails;
+import com.marriott.app.aries.hotelinfo.models.mediaviewer.MediaViewerInfo;
+import com.marriott.app.aries.platform.base.logs.RamLogger;
+import com.marriott.app.aries.platform.base.utils.context.ContextManager;
+import com.marriott.app.aries.platform.models.adaptive.ADTContentBaseVO;
+import com.marriott.app.aries.platform.models.adaptive.ADTContentType;
+import com.marriott.app.aries.platform.models.adaptive.ADTImageVO;
+import com.marriott.app.aries.platform.models.adaptive.ADTLinkVO;
+import com.marriott.app.aries.platform.models.adaptive.ADTWrapperVO;
+import com.marriott.app.aries.platform.models.adaptive.CaptionVO;
+import com.marriott.app.aries.platform.models.adaptive.ImageVO;
+import com.marriott.app.aries.platform.models.adaptive.LinkVO;
+import com.marriott.app.aries.platform.utils.common.LocaleUtils;
+
+import play.Play;
+import play.libs.F.Promise;
+
+/**
+ * <p>
+ * This class handles the API calls for MediaViewer Tile
+ * </p>
+ *
+ * @author SapientNitro
+ */
+public final class MediaViewerWSHandler extends ComponentWSHandler {
+
+    private static final org.slf4j.Logger LOGGER = RamLogger.init(MediaViewerWSHandler.class);
+
+    /**
+     * Pattern for Extracting Folder path in case of 360 Image. Test String
+     * eg:"/propertyimages/w/wasss/phototour/wasss-fitness-center-360-0001/wasss_phototour41.jpg" is
+     * converted to "/propertyimages/w/wasss/phototour"
+     */
+    private static final Pattern FOLDER_EXTRACTOR = Pattern.compile("(/[^/]*){1}$");
+
+    /**
+     * Pattern for checking the extension for image against .jpg, .jpeg and .png
+     */
+    private static final Pattern IMAGE_TYPE = Pattern.compile("\\.(jpg|jpeg|png)$",
+            Pattern.CASE_INSENSITIVE);
+
+    /**
+     * Map for taxonomy Id and corresponding label
+     */
+    private static final Map<String, Object> taxonomyIdMap = Play.application().configuration()
+            .getConfig(HotelInfoConstants.TAXONOMY_ID_MAP_FROM_CONFIG).asMap();
+
+    /**
+     * Map for media type and corresponding MIME type
+     */
+    private static final Map<String, Object> mediaMap = Play.application().configuration()
+            .getConfig(HotelInfoConstants.VIDEO_MIME_MAP_FROM_CONFIG).asMap();
+
+    /**
+     * Pattern for removing photogallery, title and period symbol from the label to form a key
+     */
+    private static final Pattern KEY_MAKER = Pattern.compile("(photogallery|\\.|title)");
+
+    /**
+     * Private Constructor to prevent instantiation.
+     */
+    private MediaViewerWSHandler() {
+    }
+
+    /**
+     * <p>
+     * This calls the AdaptiveContentWSHandler and populates the response in MediaDetails object
+     * </p>
+     *
+     * @param context
+     * @return Promise<MediaDetails>
+     */
+    public static Promise<Map<String, Object>> getComponentData(JsonNode context) {
+        LOGGER.info("inside MediaViewerWSHandler.getComponentData()");
+        Map<String, Object> mediaViewerMap = new HashMap<>();
+        return getADTComponentData(context, HotelInfoConstants.CONTENTS).map(mediaViewerDetails -> {
+            boolean isEnglishLocale = false;
+            mediaViewerMap.put(HotelInfoConstants.MEDIA_DETAILS, populateDetailsFromContext(
+                    getHotelMediaViewerData(mediaViewerDetails, context), context));
+            if (LocaleUtils.isEnglish(ContextManager.getLocaleFromContext())) {
+                isEnglishLocale = true;
+            }
+            mediaViewerMap.put(HotelInfoConstants.IS_ENGLISH_LOCALE, isEnglishLocale);
+			mediaViewerMap.put(HotelInfoConstants.TILE_COLOR_SET,
+					HotelInfoUtil.getNodeValueFromContext(context, HotelInfoConstants.TILE_COLOR_SET));
+            return mediaViewerMap;
+        });
+    }
+
+    /**
+     * <p>
+     * This method populates context details in {@link MediaDetails} Object and returns the
+     * processed MediaDetails object
+     * </p>
+     *
+     * @param mediaDetails
+     * @param context
+     * @return MediaDetails object
+     */
+    private static MediaDetails populateDetailsFromContext(MediaDetails mediaDetails,
+            JsonNode context) {
+        if (null != mediaDetails) {
+            mediaDetails.setMarshaCode(
+                    HotelInfoUtil.getNodeValueFromContext(context, HotelInfoConstants.MARSHA_CODE));
+            mediaDetails.setHotelName(
+                    HotelInfoUtil.getNodeValueFromContext(context, HotelInfoConstants.HOTEL_NAME));
+            mediaDetails.setDisplayResort(Boolean.parseBoolean(HotelInfoUtil
+                    .getNodeValueFromContext(context, HotelInfoConstants.IS_RESORT_FLAG)));
+            mediaDetails.setInitialLoad(HotelInfoWSUtil.getIntConfigValue(
+                    HotelInfoConstants.PHOTO_VIEWER_INITIAL_LOAD_COUNT_CONFIG_KEY));
+            mediaDetails.setExpandCaption(Boolean.parseBoolean(HotelInfoUtil
+                    .getNodeValueFromContext(context, HotelInfoConstants.EXPAND_CAPTION)));
+            String mediaIndex = HotelInfoUtil.getNodeValueFromContext(context,
+                    HotelInfoConstants.MEDIA_INDEX);
+            String pageID = HotelInfoUtil.getNodeValueFromContext(context,
+                    HotelInfoConstants.PAGE_ID);
+            populateMediaIndex(mediaDetails, mediaIndex, pageID);
+
+            mediaDetails.setImageCount(
+                    mediaDetails.getTotalPhotosCount() - mediaDetails.getVideoCount());
+            populateImageVideoHeadingText(mediaDetails, context);
+        }
+        return mediaDetails;
+    }
+
+    /**
+     * <p>
+     * Populate the image and video heading based upon image and video count
+     * </p>
+     *
+     * @param mediaDetails
+     * @param context
+     */
+    private static void populateImageVideoHeadingText(MediaDetails mediaDetails, JsonNode context) {
+        int imageCount = mediaDetails.getImageCount();
+        int videoCount = mediaDetails.getVideoCount();
+        if (imageCount > HotelInfoConstants.ZERO_AS_INT
+                || videoCount > HotelInfoConstants.ZERO_AS_INT) {
+            String isResortFlag = HotelInfoUtil.getNodeValueFromContext(context,
+                    HotelInfoConstants.IS_RESORT_FLAG);
+            if (Boolean.parseBoolean(isResortFlag)) {
+                MediaViewerHelper.populateResortRelatedLabels(mediaDetails, imageCount, videoCount);
+            } else {
+                MediaViewerHelper.populateHotelRelatedLabels(mediaDetails, imageCount, videoCount);
+            }
+        }
+    }
+
+    /**
+     * This method populates the mediaIndex. If pageID is passed in params, then set mediaIndex to
+     * the first image of the category tagged to pageID key
+     *
+     * @param mediaDetails
+     * @param mediaIndex
+     * @param pageID
+     */
+    private static void populateMediaIndex(MediaDetails mediaDetails, String mediaIndex,
+            String pageID) {
+        if (StringUtils.isNotBlank(pageID)) {
+            populateMediaIndexFromPageId(mediaDetails, pageID);
+        } else if (StringUtils.isNotBlank(mediaIndex) && StringUtils.isNumeric(mediaIndex)
+                && mediaDetails.isDisplayGalleryTile()) {
+            for (Map.Entry<String, Object> entry : mediaDetails.getMediaMap().entrySet()) {
+                processMediaIndex(mediaDetails, mediaIndex, entry);
+            }
+        }
+    }
+
+    /**
+     * This method processes the media index and returns mediaId of the wide image if it exists for
+     * the corresponding classic image. Else it returns the mediaId of the first image of the
+     * category to which the classic image belongs, if the relevant category exists for the
+     * corresponding Wide image as well.
+     *
+     * @param mediaDetails
+     * @param mediaIndex
+     * @param entry
+     */
+    private static void processMediaIndex(MediaDetails mediaDetails, String mediaIndex,
+            Map.Entry<String, Object> entry) {
+        if (entry.getValue() instanceof MediaViewerInfo) {
+            MediaViewerInfo mediaViewer = (MediaViewerInfo) entry.getValue();
+            List<Media> mediaList = mediaViewer.getMediaList();
+            for (Media media : mediaList) {
+                processGalleryMediaId(mediaDetails, mediaIndex, mediaViewer, media);
+            }
+        }
+    }
+
+    /**
+     * This method returns the mediaId for the Wide Image corresponding to the Classic Image
+     *
+     * @param mediaDetails
+     * @param mediaIndex
+     * @param mediaViewer
+     * @param media
+     */
+    private static void processGalleryMediaId(MediaDetails mediaDetails, String mediaIndex,
+            MediaViewerInfo mediaViewer, Media media) {
+        if (StringUtils.equals(String.valueOf(media.getPhotosId()), mediaIndex)) {
+            if (media.getMediaId() > HotelInfoConstants.ZERO_AS_INT) {
+                mediaDetails.setMediaIndex(media.getMediaId());
+            } else if (mediaViewer.isShowCategory()) {
+                mediaDetails.setMediaIndex(mediaViewer.getStartIndex());
+            }
+        }
+    }
+
+    /**
+     * This method is used to set the media Index based on the pageId key
+     *
+     * @param mediaDetails
+     * @param pageID
+     */
+    private static void populateMediaIndexFromPageId(MediaDetails mediaDetails, String pageID) {
+        if (MapUtils.isNotEmpty(mediaDetails.getMediaMap())) {
+            for (Map.Entry<String, Object> entry : mediaDetails.getMediaMap().entrySet()) {
+                processPageIdStartIndex(mediaDetails, pageID, entry);
+            }
+        }
+    }
+
+    /**
+     * This method sets the mediaIndex as the startIndex of the key corresponding to the pageID
+     *
+     * @param mediaDetails
+     * @param pageID
+     * @param entry
+     */
+    private static void processPageIdStartIndex(MediaDetails mediaDetails, String pageID,
+            Map.Entry<String, Object> entry) {
+        if (StringUtils.equals(entry.getKey(), pageID)
+                && entry.getValue() instanceof MediaViewerInfo) {
+            MediaViewerInfo media = (MediaViewerInfo) entry.getValue();
+            if (media.isShowCategory()) {
+                mediaDetails.setMediaIndex(media.getStartIndex());
+            }
+        }
+    }
+
+    /**
+     * This method processes the List<List<ADTContentBaseVO>> and populates the response in
+     * MediaDetails object
+     *
+     * @param adtContentArrayList
+     * @param context
+     * @return MediaDetails object
+     */
+    private static MediaDetails getHotelMediaViewerData(
+            List<List<ADTContentBaseVO>> adtContentArrayList, JsonNode context) {
+        MediaDetails mediaDetails = new MediaDetails();
+        if (CollectionUtils.isNotEmpty(adtContentArrayList)) {
+            Map<String, Object> mediaViewerMap = new LinkedHashMap<>();
+            for (List<ADTContentBaseVO> adtContentList : adtContentArrayList) {
+                processAdtContentList(mediaViewerMap, adtContentList, context);
+            }
+            populateMediaCountAndIndex(sortCategories(mediaViewerMap, HotelInfoUtil
+                    .getNodeValueFromContext(context, HotelInfoConstants.SORT_CONTEXT_PARAM_NAME)),
+                    mediaDetails);
+            if (MapUtils.isNotEmpty(mediaViewerMap)) {
+                if (mediaDetails.getTotalCount() > HotelInfoConstants.ZERO_AS_INT) {
+                    mediaDetails.setDisplayGalleryTile(true);
+                }
+                if (mediaDetails.getTotalPhotosCount() > HotelInfoConstants.ZERO_AS_INT) {
+                    mediaDetails.setDisplayPhotosTile(true);
+                }
+            }
+        }
+        return mediaDetails;
+    }
+
+    /**
+     * This method returns the map containing the categories in the order to be displayed if the
+     * sortOrder list is not empty
+     *
+     * @param mediaViewerMap
+     * @param propertyMediaSortKey -
+     * @return sorted mediaViewerMap
+     */
+    private static Map<String, Object> sortCategories(Map<String, Object> mediaViewerMap,
+            String propertyMediaSortKey) {
+        List<String> mediaCategorySortOrder = HotelInfoWSUtil
+                .getListConfigValue(getMediaCategorySortOrderFromConfig(propertyMediaSortKey));
+        if (MapUtils.isNotEmpty(mediaViewerMap)
+                && CollectionUtils.isNotEmpty(mediaCategorySortOrder)) {
+            Map<String, Object> orderedMap = new LinkedHashMap<>();
+            for (String category : mediaCategorySortOrder) {
+                if (mediaViewerMap.containsKey(category)) {
+                    orderedMap.put(category, mediaViewerMap.get(category));
+                }
+            }
+            return orderedMap;
+        }
+        return mediaViewerMap;
+    }
+
+    /**
+     * <p>
+     * This method will return property media category order list from config
+     *
+     * @param propertyMediaSortKey
+     *            -media category sort order key provided in context node for reordering the
+     *            category map
+     * @return
+     */
+    private static String getMediaCategorySortOrderFromConfig(String propertyMediaSortKey) {
+        if (StringUtils.isNotEmpty(propertyMediaSortKey)) {
+            return StringUtils.join(HotelInfoConstants.CATEGORY_ORDER_LIST,
+                    HotelInfoConstants.PERIOD_STRING, propertyMediaSortKey);
+        }
+        return StringUtils.join(HotelInfoConstants.CATEGORY_ORDER_LIST,
+                HotelInfoConstants.PERIOD_STRING, HotelInfoConstants.DEFAULT);
+    }
+
+    /**
+     * This method processes the adtContentList and populates the response in the mediaViewerMap
+     *
+     * @param mediaViewerMap
+     * @param adtContentList
+     * @param context
+     */
+    private static void processAdtContentList(Map<String, Object> mediaViewerMap,
+            List<ADTContentBaseVO> adtContentList, JsonNode context) {
+        String brandCode = HotelInfoUtil.getNodeValueFromContext(context,
+                HotelInfoConstants.BRAND_CODE);
+        String marshaCode = HotelInfoUtil.getNodeValueFromContext(context,
+                HotelInfoConstants.MARSHA_CODE);
+        boolean isResort = Boolean.parseBoolean(
+                HotelInfoUtil.getNodeValueFromContext(context, HotelInfoConstants.IS_RESORT_FLAG));
+        Locale locale = ContextManager.getLocaleFromContext();
+        if (CollectionUtils.isNotEmpty(adtContentList)) {
+            for (ADTContentBaseVO adTContent : adtContentList) {
+                processContentItem(adTContent, mediaViewerMap, brandCode, marshaCode, isResort,
+                        locale);
+            }
+        }
+    }
+
+    /**
+     * This method populates the totalMediaCount and mediaIndex for each media
+     *
+     * @param mediaViewerMap
+     * @param mediaDetails
+     */
+    private static void populateMediaCountAndIndex(Map<String, Object> mediaViewerMap,
+            MediaDetails mediaDetails) {
+        int mediaIndex = HotelInfoConstants.ONE_AS_INT;
+        int photosMediaIndex = HotelInfoConstants.ONE_AS_INT;
+        int totalMediaCount = HotelInfoConstants.ZERO_AS_INT;
+        int totalPhotosMediaCount = HotelInfoConstants.ZERO_AS_INT;
+        if (MapUtils.isNotEmpty(mediaViewerMap)) {
+            for (Map.Entry<String, Object> key : mediaViewerMap.entrySet()) {
+                int categoryCount = HotelInfoConstants.ZERO_AS_INT;
+                int photosCount = HotelInfoConstants.ZERO_AS_INT;
+                MediaViewerInfo media = (MediaViewerInfo) key.getValue();
+                List<Media> mediaList = media.getMediaList();
+                boolean isPhotoIndexSet = false;
+                boolean isIndexSet = false;
+                for (Media galleryMedia : mediaList) {
+                    mediaIndex = setMediaId(mediaIndex, media, galleryMedia);
+                    photosMediaIndex = setPhotosId(photosMediaIndex, media, galleryMedia);
+                    isPhotoIndexSet = setPhotoStartIndex(media, isPhotoIndexSet, galleryMedia);
+                    isIndexSet = setMediaStartIndex(media, isIndexSet, galleryMedia);
+                    categoryCount += galleryMedia.getGalleryCount();
+                    photosCount += galleryMedia.getPhotosCount();
+                }
+                media.setMediaCount(categoryCount);
+                media.setPhotosMediaCount(photosCount);
+                totalMediaCount += media.getMediaCount();
+                totalPhotosMediaCount += media.getPhotosMediaCount();
+                if (StringUtils.equalsIgnoreCase(media.getMediaType(),
+                        HotelInfoConstants.MEDIA_VIDEO)) {
+                    mediaDetails.setVideoCount(media.getPhotosMediaCount());
+                }
+            }
+        }
+        mediaDetails.setTotalCount(totalMediaCount);
+        mediaDetails.setTotalPhotosCount(totalPhotosMediaCount);
+        mediaDetails.setMediaMap(mediaViewerMap);
+    }
+
+    /**
+     * This method sets the Media Index
+     *
+     * @param media
+     * @param isIndexSet
+     * @param galleryMedia
+     * @param isSet
+     */
+    private static boolean setMediaStartIndex(MediaViewerInfo media, boolean isIndexSet,
+            Media galleryMedia) {
+        boolean isSet = isIndexSet;
+        if (!isSet && galleryMedia.getGalleryCount() > HotelInfoConstants.ZERO_AS_INT) {
+            media.setStartIndex(galleryMedia.getMediaId());
+            isSet = true;
+        }
+        return isSet;
+    }
+
+    /**
+     * This method sets the PhotosStartIndex
+     *
+     * @param media
+     * @param isPhotoIndexSet
+     * @param galleryMedia
+     * @param isSet
+     */
+    private static boolean setPhotoStartIndex(MediaViewerInfo media, boolean isPhotoIndexSet,
+            Media galleryMedia) {
+        boolean isSet = isPhotoIndexSet;
+        if (!isSet && galleryMedia.getPhotosCount() > HotelInfoConstants.ZERO_AS_INT) {
+            media.setPhotosStartIndex(galleryMedia.getPhotosId());
+            isSet = true;
+        }
+        return isSet;
+    }
+
+    /**
+     * This method sets the PhotosId
+     *
+     * @param photosMediaIndex
+     * @param media
+     * @param galleryMedia
+     * @return photosMediaIndex
+     */
+    private static int setPhotosId(int photosMediaIndex, MediaViewerInfo media,
+            Media galleryMedia) {
+        int index = photosMediaIndex;
+        if (galleryMedia.getPhotosCount() > HotelInfoConstants.ZERO_AS_INT) {
+            media.setShowPhotos(true);
+            galleryMedia.setPhotosId(index);
+            index++;
+        } else {
+            galleryMedia.setPhotosId(HotelInfoConstants.ZERO_AS_INT);
+        }
+        return index;
+    }
+
+    /**
+     * This method sets the MediaId
+     *
+     * @param mediaIndex
+     * @param media
+     * @param galleryMedia
+     * @return mediaIndex
+     */
+    private static int setMediaId(int mediaIndex, MediaViewerInfo media, Media galleryMedia) {
+        int index = mediaIndex;
+        if (galleryMedia.getGalleryCount() > HotelInfoConstants.ZERO_AS_INT) {
+            media.setShowCategory(true);
+            galleryMedia.setMediaId(index);
+            index++;
+        } else {
+            galleryMedia.setMediaId(HotelInfoConstants.ZERO_AS_INT);
+        }
+        return index;
+    }
+
+    /**
+     * This method processes the Contents node and populates the response based on the
+     * ADTContentType
+     *
+     * @param adtContents
+     * @param mediaViewerMap
+     * @param brandCode
+     * @param marshaCode
+     * @param isResort
+     * @param locale
+     */
+    private static void processContentItem(ADTContentBaseVO adtContents,
+            Map<String, Object> mediaViewerMap, String brandCode, String marshaCode,
+            boolean isResort, Locale locale) {
+        List<MediaViewerInfo> mediaViewerList = new ArrayList<>();
+        String labelKey = getContentLabelFromMap(brandCode, isResort, adtContents);
+        if (adtContents != null) {
+            processMediaContent(adtContents, mediaViewerMap, marshaCode, mediaViewerList, labelKey,
+                    locale);
+        }
+    }
+
+    /**
+     * This method processes the ADT Content basis the ADT Type and populates the mediaViewerMap
+     *
+     * @param adtContents
+     * @param mediaViewerMap
+     * @param marshaCode
+     * @param mediaViewerList
+     * @param labelKey
+     * @param locale
+     */
+    private static void processMediaContent(ADTContentBaseVO adtContents,
+            Map<String, Object> mediaViewerMap, String marshaCode,
+            List<MediaViewerInfo> mediaViewerList, String labelKey, Locale locale) {
+        if (adtContents.getType() == ADTContentType.ADT_WRAPPER
+                && StringUtils.isNotBlank(labelKey)) {
+            processAdtWrapper(adtContents, mediaViewerMap, marshaCode, mediaViewerList, labelKey,
+                    locale);
+        } else if (adtContents.getType() == ADTContentType.ADT_LINK
+                && StringUtils.isNotBlank(labelKey)) {
+            processAdtLink(adtContents, mediaViewerMap, marshaCode, mediaViewerList, labelKey);
+        }
+    }
+
+    /**
+     * This method processes the ADT Link type content and populates the response in mediaViewerMap
+     *
+     * @param adtContents
+     * @param mediaViewerMap
+     * @param marshaCode
+     * @param mediaViewerList
+     * @param labelKey
+     */
+    private static void processAdtLink(ADTContentBaseVO adtContents,
+            Map<String, Object> mediaViewerMap, String marshaCode,
+            List<MediaViewerInfo> mediaViewerList, String labelKey) {
+        // Separate list for video mediaType
+        List<Media> videoList = new ArrayList<>();
+        // Separate MediaViewerInfo object for videos
+        MediaViewerInfo hotelVideos = new MediaViewerInfo();
+        populateVideoMediaDetails(adtContents, mediaViewerList, videoList, hotelVideos, labelKey);
+        addMedia(mediaViewerMap, hotelVideos, labelKey);
+    }
+
+    /**
+     * This method processes the ADT Wrapper and populates the processed response in mediaViewerMap
+     *
+     * @param adtContents
+     * @param mediaViewerMap
+     * @param marshaCode
+     * @param mediaViewerList
+     * @param labelKey
+     * @param locale
+     */
+    private static void processAdtWrapper(ADTContentBaseVO adtContents,
+            Map<String, Object> mediaViewerMap, String marshaCode,
+            List<MediaViewerInfo> mediaViewerList, String labelKey, Locale locale) {
+        List<Media> imageList = new ArrayList<>();
+        MediaViewerInfo hotelImages = new MediaViewerInfo();
+
+        ADTWrapperVO wrapperVO = (ADTWrapperVO) adtContents;
+        int threeSixtyCount = HotelInfoConstants.ZERO_AS_INT;
+        List<ADTContentBaseVO> adtContentList = wrapperVO.getAdtContentBaseVOList();
+        for (ADTContentBaseVO adtContent : adtContentList) {
+            threeSixtyCount = processADTContentVOList(adtContent, imageList, threeSixtyCount,
+                    locale);
+        }
+        if (CollectionUtils.isNotEmpty(imageList)) {
+            populateMediaDetails(mediaViewerList, imageList, hotelImages, labelKey);
+            addMedia(mediaViewerMap, hotelImages, labelKey);
+        }
+    }
+
+    /**
+     * This method populates the video media details only into the MediaViewerInfo list
+     *
+     * @param adtContents
+     * @param mediaViewerList
+     * @param videoList
+     * @param hotelVideos
+     * @param labelKey
+     */
+    private static void populateVideoMediaDetails(ADTContentBaseVO adtContents,
+            List<MediaViewerInfo> mediaViewerList, List<Media> videoList,
+            MediaViewerInfo hotelVideos, String labelKey) {
+        ADTLinkVO adtLinksVO = (ADTLinkVO) adtContents;
+        List<LinkVO> adtVOList = adtLinksVO.getLinks();
+        adtVOList.forEach(video -> processADTVideoItem(video, videoList));
+        if (videoList.size() > HotelInfoConstants.ZERO_AS_INT) {
+            hotelVideos.setCategoryLabel(HotelInfoUtil.resolveLocalizedLabel(
+                    StringUtils.join(HotelInfoWSConstants.BUNDLE_PHOTO_GALLERY,
+                            HotelInfoConstants.PIPE_DELIMITER, labelKey)));
+            hotelVideos.setMediaList(videoList);
+            hotelVideos.setMediaCount(videoList.size());
+            hotelVideos.setMediaType(HotelInfoConstants.MEDIA_VIDEO);
+            mediaViewerList.add(hotelVideos);
+        }
+    }
+
+    /**
+     * This method populates the media details into the MediaViewerInfo list
+     *
+     * @param mediaViewerList
+     * @param imageList
+     * @param hotelImages
+     * @param labelKey
+     */
+    private static void populateMediaDetails(List<MediaViewerInfo> mediaViewerList,
+            List<Media> imageList, MediaViewerInfo hotelImages, String labelKey) {
+        hotelImages.setMediaList(imageList);
+        hotelImages.setMediaType(HotelInfoConstants.MEDIA_IMAGE);
+        hotelImages.setMediaCount(imageList.size());
+        hotelImages.setCategoryLabel(HotelInfoUtil
+                .resolveLocalizedLabel(StringUtils.join(HotelInfoWSConstants.BUNDLE_PHOTO_GALLERY,
+                        HotelInfoConstants.PIPE_DELIMITER, labelKey)));
+        mediaViewerList.add(hotelImages);
+    }
+
+    /**
+     * This method adds the image/video media as per the category into the map
+     *
+     * @param mediaViewerMap
+     * @param hotelImages
+     * @param labelKey
+     */
+    private static void addMedia(Map<String, Object> mediaViewerMap, MediaViewerInfo hotelImages,
+            String labelKey) {
+        String key = HotelInfoConstants.BLANK_STRING;
+        Matcher matcher = KEY_MAKER.matcher(labelKey);
+        if (matcher.find()) {
+            key = matcher.replaceAll(HotelInfoConstants.BLANK_STRING);
+        }
+        if (hotelImages.getMediaCount() > HotelInfoConstants.ZERO_AS_INT) {
+            mediaViewerMap.put(key, hotelImages);
+        }
+    }
+
+    /**
+     * This method retrieves the label key corresponding to the taxonomy tag
+     *
+     * @param brandCode
+     * @param isResort
+     * @param adtContents
+     * @return the label key corresponding to the category tag
+     */
+    private static String getContentLabelFromMap(String brandCode, boolean isResort,
+            ADTContentBaseVO adtContents) {
+        String contentName = HotelInfoConstants.BLANK_STRING;
+        if (adtContents != null) {
+            List<String> contentNames = adtContents.getTaxonomies();
+            String roomType = HotelInfoUtil.getRoomType(brandCode);
+            for (String taxonomy : contentNames) {
+                contentName = HotelInfoWSUtil.processLabelKey(isResort, roomType, taxonomy,
+                        taxonomyIdMap);
+                if (StringUtils.isNotBlank(contentName)) {
+                    break;
+                }
+            }
+        }
+        return contentName;
+    }
+
+    /**
+     * This method processes the AdtContentVO and populates the response in hotelMediaViewer object
+     *
+     * @param adtContent
+     * @param imageList
+     * @param videoList
+     * @param threeSixtyCount
+     * @param locale
+     * @return threeSixtyCount for identifying if one threeSixtyImage already exists
+     */
+    private static int processADTContentVOList(ADTContentBaseVO adtContent, List<Media> imageList,
+            int threeSixtyCount, Locale locale) {
+        int threeSixtyCounter = HotelInfoConstants.ZERO_AS_INT;
+        Media gallery = new Media();
+
+        if (adtContent.getType() == ADTContentType.ADT_IMAGE) {
+            ADTImageVO imageVO = (ADTImageVO) adtContent;
+            List<ImageVO> imageVOList = imageVO.getImages();
+            List<CaptionVO> captionVOList = imageVO.getCaptions();
+            if (CollectionUtils.isNotEmpty(imageVOList)) {
+                for (ImageVO image : imageVOList) {
+                    threeSixtyCounter = processADTImageItem(image, gallery, threeSixtyCount,
+                            imageList, captionVOList, locale);
+                }
+                if (gallery.isValidNode()) {
+                    imageList.add(gallery);
+                }
+            }
+        }
+        return threeSixtyCounter;
+    }
+
+    /**
+     * This method populates the response for title, caption and altText based on the caption length
+     *
+     * @param captionVOItem
+     * @param gallery
+     */
+    private static void processCaptionADTItem(CaptionVO captionVOItem, Media gallery,
+            Locale locale) {
+        if (StringUtils.equalsIgnoreCase(captionVOItem.getLength(), HotelInfoConstants.LENGHT_LARGE)
+                && LocaleUtils.isEnglish(locale)) {
+            gallery.setCaption(captionVOItem.getCaption());
+        } else if (StringUtils.equalsIgnoreCase(captionVOItem.getLength(),
+                HotelInfoConstants.LENGHT_SHORT)) {
+            gallery.setImageAltText(captionVOItem.getCaption());
+        } else if (StringUtils.equalsIgnoreCase(captionVOItem.getLength(),
+                HotelInfoConstants.LENGHT_MEDIUM)) {
+            gallery.setTitle(captionVOItem.getCaption());
+            if (!LocaleUtils.isEnglish(locale)) {
+                gallery.setCaption(captionVOItem.getCaption());
+            }
+        }
+    }
+
+    /**
+     * This method processes the ADTImageVO and populates the gallery object only when aspectRatio
+     * matches either Feature or 360L
+     *
+     * @param image
+     * @param gallery
+     * @param threeSixtyCount
+     * @param imageList
+     *            of Gallery
+     * @param captionVOList
+     *            of CaptionVO
+     * @param locale
+     * @return count for threeSixty image
+     */
+    private static int processADTImageItem(ImageVO image, Media gallery, int threeSixtyCount,
+            List<Media> imageList, List<CaptionVO> captionVOList, Locale locale) {
+        String aspectRatio = image.getAspectRatio();
+        int threeSixtyCounter = HotelInfoConstants.ZERO_AS_INT;
+        if (StringUtils.equals(aspectRatio, HotelInfoConstants.IMAGE_CLASSIC)) {
+            processClassicImage(image, gallery);
+
+        } else if (StringUtils.equals(aspectRatio, HotelInfoConstants.IMAGE_WIDE)) {
+            processWideImage(image, gallery);
+        } else if (StringUtils.equals(aspectRatio, HotelInfoConstants.IMAGE_360)) {
+            processThreeSixtyImage(image, imageList);
+        } else if (StringUtils.equals(aspectRatio, HotelInfoConstants.IMAGE_360L)) {
+            threeSixtyCounter = process360LImage(image, threeSixtyCount, imageList, captionVOList,
+                    locale, aspectRatio, threeSixtyCounter);
+        }
+        if (CollectionUtils.isNotEmpty(captionVOList)) {
+            captionVOList.forEach(
+                    captionVOItem -> processCaptionADTItem(captionVOItem, gallery, locale));
+        }
+        return threeSixtyCounter;
+    }
+
+    /**
+     * <p>
+     * This method processes a 360L image and gives you count for threeSixty image.
+     * </p>
+     *
+     * @param image
+     * @param threeSixtyCount
+     * @param imageList
+     * @param captionVOList
+     * @param locale
+     * @param aspectRatio
+     * @param threeSixtyCounter
+     * @return threeSixtyCounter
+     */
+    private static int process360LImage(ImageVO image, int threeSixtyCount, List<Media> imageList,
+            List<CaptionVO> captionVOList, Locale locale, String aspectRatio,
+            int threeSixtyCounter) {
+        String imagePath = image.getImageFile();
+        String imageFolderPath = HotelInfoConstants.BLANK_STRING;
+        Matcher matcher = FOLDER_EXTRACTOR.matcher(imagePath);
+
+        // Changing the image path to folder path of the image in case of 360 Image
+        if (StringUtils.isNotBlank(imagePath) && matcher.find()) {
+            imageFolderPath = imagePath.substring(HotelInfoConstants.ZERO_AS_INT,
+                    matcher.start());
+        }
+        Media galleryThreeSixty = new Media();
+        String imageFileExtension = HotelInfoConstants.BLANK_STRING;
+        boolean is360ImageAbsent = processThreeSixtyImageOnce(imageFolderPath,
+                galleryThreeSixty, threeSixtyCount, aspectRatio, imagePath);
+        if (is360ImageAbsent) {
+            Matcher imageExtensionsMatcher = IMAGE_TYPE.matcher(image.getImageFile());
+            if (imageExtensionsMatcher.find()) {
+                imageFileExtension = imageExtensionsMatcher.group();
+            }
+            galleryThreeSixty.setFileType(imageFileExtension);
+            if (StringUtils.isNotBlank(imageFileExtension)) {
+                threeSixtyCounter = threeSixtyCount + HotelInfoConstants.ONE_AS_INT;
+                if (CollectionUtils.isNotEmpty(captionVOList)) {
+                    captionVOList.forEach(captionVOItem -> processCaptionADTItem(captionVOItem,
+                            galleryThreeSixty, locale));
+                }
+                galleryThreeSixty.setValidNode(true);
+                galleryThreeSixty.setGalleryCount(HotelInfoConstants.ONE_AS_INT);
+                galleryThreeSixty.setPhotosCount(HotelInfoConstants.ONE_AS_INT);
+                imageList.add(galleryThreeSixty);
+            }
+        }
+        return threeSixtyCounter;
+    }
+
+    /**
+     * This method processes the image with aspect ratio as 360
+     *
+     * @param image
+     * @param imageList
+     */
+    private static void processThreeSixtyImage(ImageVO image, List<Media> imageList) {
+        Media galleryThreeSixty = new Media();
+        galleryThreeSixty.setFullImageFile(image.getImageFile());
+        galleryThreeSixty.setClassicImageFile(image.getImageFile());
+        galleryThreeSixty.setAspectRatio(HotelInfoConstants.IMAGE_360);
+        galleryThreeSixty.setGalleryCount(HotelInfoConstants.ONE_AS_INT);
+        galleryThreeSixty.setPhotosCount(HotelInfoConstants.ONE_AS_INT);
+        galleryThreeSixty.setValidNode(true);
+        imageList.add(galleryThreeSixty);
+    }
+
+    /**
+     * This method processes the Wide Image to be shown on Media Viewer Popup
+     *
+     * @param image
+     * @param gallery
+     */
+    private static void processWideImage(ImageVO image, Media gallery) {
+        gallery.setFullImageFile(image.getImageFile());
+        gallery.setAspectRatio(HotelInfoConstants.IMAGE_NORMAL);
+        gallery.setGalleryCount(HotelInfoConstants.ONE_AS_INT);
+        gallery.setValidNode(true);
+    }
+
+    /**
+     * This method processes the Classic Image to be shown on Photos Page
+     *
+     * @param image
+     * @param gallery
+     */
+    private static void processClassicImage(ImageVO image, Media gallery) {
+        String imageUrl = image.getImageFile();
+        if (StringUtils.isNotBlank(imageUrl)) {
+            gallery.setClassicImageFile(imageUrl);
+            gallery.setValidNode(true);
+            gallery.setAspectRatio(HotelInfoConstants.IMAGE_NORMAL);
+            gallery.setPhotosCount(HotelInfoConstants.ONE_AS_INT);
+        }
+    }
+
+    /**
+     * This method sets the 360Image just once in the gallery object
+     *
+     * @param imagefolderPath
+     * @param gallery
+     * @param threeSixtyImageCount
+     * @param aspectRatio
+     * @param imagePath
+     * @return boolean value for 360 image
+     */
+    private static boolean processThreeSixtyImageOnce(String imagefolderPath, Media gallery,
+            int threeSixtyImageCount, String aspectRatio, String imagePath) {
+        if (threeSixtyImageCount == HotelInfoConstants.ZERO_AS_INT) {
+            // Setting 360L image just once as different images are parts of the single image in the
+            // same same folder path
+            gallery.setFullImageFile(imagefolderPath);
+            gallery.setClassicImageFile(imagePath);
+            gallery.setAspectRatio(aspectRatio);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * This method process the ADTLink node and populates the response in videoList
+     *
+     * @param video
+     * @param videoList
+     */
+    private static void processADTVideoItem(LinkVO video, List<Media> videoList) {
+        Media gallery = new Media();
+        String mediaType = video.getUrl();
+        if (processVideoFileType(gallery, mediaType)) {
+            gallery.setVideoLinkUrl(video.getUrl());
+            gallery.setVideoLinkText(video.getText());
+            gallery.setTitle(video.getText());
+            gallery.setGalleryCount(HotelInfoConstants.ONE_AS_INT);
+            gallery.setPhotosCount(HotelInfoConstants.ONE_AS_INT);
+            videoList.add(gallery);
+        }
+    }
+
+    /**
+     * This method sets the fileType for video
+     *
+     * @param gallery
+     * @param mediaType
+     * @boolean isMediaSupported
+     */
+    private static boolean processVideoFileType(Media gallery, String mediaType) {
+        String supportedMediaType = HotelInfoConstants.BLANK_STRING;
+        boolean supported = false;
+        if (MapUtils.isNotEmpty(mediaMap)) {
+            for (Map.Entry<String, Object> pagePath : mediaMap.entrySet()) {
+                if (StringUtils.contains(mediaType, pagePath.getKey())) {
+                    supportedMediaType = (String) pagePath.getValue();
+                    supported = true;
+                    break;
+                }
+            }
+            gallery.setFileType(supportedMediaType);
+        }
+        return supported;
+    }
+}

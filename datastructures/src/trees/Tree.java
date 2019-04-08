@@ -60,7 +60,7 @@ public class Tree {
     down to the farthest leaf node.*/
     public int height(TreeNode root) {
         if (root == null)
-            return 0;
+            return -1;
         /* If tree is not empty then height = 1 + max of left
            height and right heights */
         return (1 + Math.max(height(root.getLeftChild()), height(root.getRightChild())));
@@ -147,6 +147,7 @@ public class Tree {
             node.setRightChild(temp);
         }
     }
+
 
     public TreeNode getRoot() {
         return root;

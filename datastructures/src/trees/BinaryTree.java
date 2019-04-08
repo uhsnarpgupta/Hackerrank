@@ -1,5 +1,10 @@
 package trees;
 
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.TreeMap;
+
 public class BinaryTree {
     public Node root;
 
@@ -9,7 +14,7 @@ public class BinaryTree {
     static int height(Node node) {
         /* base case tree is empty */
         if (node == null)
-            return 0;
+            return -1;
 
         /* If tree is not empty then height = 1 + max of left
            height and right heights */
@@ -82,5 +87,90 @@ public class BinaryTree {
 
         /* Else return false */
         return false;
+    }
+
+    // BFS : levelOrder
+    public void traverseLevelOrder() {
+        int h = height(root);
+        int i;
+        for (i = 1; i <= h; i++)
+            printGivenLevel(root, i);
+    }
+
+
+    // working approach
+    public static void levelOrderTraversal(Node root){
+        Queue<Node> queue = new LinkedList<Node>();
+        if( root != null ){
+            queue.add(root);
+        }
+        while( !queue.isEmpty() ){
+            Node tree = queue.remove();
+            System.out.print(tree.data + " ");
+
+            if( tree.left != null ){
+                queue.add( tree.left );
+            }
+            if( tree.right != null ){
+                queue.add( tree.right );
+            }
+        }
+    }
+
+    /* Print nodes at the given level */
+    void printGivenLevel(Node root, int level) {
+        if (root == null)
+            return;
+        if (level == 1)
+            System.out.print(root.data + " ");
+        else if (level > 1) {
+            printGivenLevel(root.left, level - 1);
+            printGivenLevel(root.right, level - 1);
+        }
+    }
+
+    // function should print the topView of
+    // the binary tree
+    public void topView(Node root) {
+        class QueueObj {
+            Node node;
+            int hd;
+
+            QueueObj(Node node, int hd) {
+                this.node = node;
+                this.hd = hd;
+            }
+        }
+        Queue<QueueObj> q = new LinkedList<QueueObj>();
+        Map<Integer, Node> topViewMap = new TreeMap<Integer, Node>();
+
+        if (root == null) {
+            return;
+        } else {
+            q.add(new QueueObj(root, 0));
+        }
+
+        System.out.println("The top view of the tree is : ");
+
+        // count function returns 1 if the container
+        // contains an element whose key is equivalent
+        // to hd, or returns zero otherwise.
+        while (!q.isEmpty()) {
+            QueueObj tmpNode = q.poll();
+            if (!topViewMap.containsKey(tmpNode.hd)) {
+                topViewMap.put(tmpNode.hd, tmpNode.node);
+            }
+
+            if (tmpNode.node.left != null) {
+                q.add(new QueueObj(tmpNode.node.left, tmpNode.hd - 1));
+            }
+            if (tmpNode.node.right != null) {
+                q.add(new QueueObj(tmpNode.node.right, tmpNode.hd + 1));
+            }
+
+        }
+        for (Map.Entry<Integer, Node> entry : topViewMap.entrySet()) {
+            System.out.print(entry.getValue().data + " ");
+        }
     }
 }

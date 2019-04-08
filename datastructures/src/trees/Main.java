@@ -32,5 +32,18 @@ public class Main {
 
         System.out.println();
         System.out.println(intTree.diameter(intTree.getRoot()));
+
+        BinaryTree binaryTree = new BinaryTree();
+        binaryTree.root = new Node(1);
+        binaryTree.root.left = null;
+        binaryTree.root.right = new Node(2);
+        binaryTree.root.right.right = new Node(5);
+        binaryTree.root.right.left = null;
+        binaryTree.root.right.right.left = new Node(3);
+        binaryTree.root.right.right.right = new Node(6);
+        binaryTree.root.right.right.left.right = new Node(4);
+
+        binaryTree.traverseLevelOrder();
+
     }
 }
