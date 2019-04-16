@@ -57,6 +57,11 @@ public class Worker {
         });
 
         t1.start();
+        try {
+            t1.join();
+        } catch (InterruptedException ex) {
+
+        }
         long end = System.currentTimeMillis();
 
         System.out.println("Time taken: " + (end - start));

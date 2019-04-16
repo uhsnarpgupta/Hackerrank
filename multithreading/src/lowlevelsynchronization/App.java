@@ -8,31 +8,35 @@ class Processor {
     private LinkedList<Integer> list = new LinkedList<>();
     private Object lock = new Object();
 
-    public void produce() throws InterruptedException {
+    public synchronized void produce() throws InterruptedException {
         int value = 0;
         while (true) {
-            synchronized (lock) {
+            //synchronized (lock) {
                 while (list.size() == LIMIT) {
-                    lock.wait();
+                    //lock.wait();
+                    wait();
                 }
                 list.add(value++);
-                lock.notify();
-            }
+            notify();
+            //lock.notify();
+            //}
         }
     }
 
-    public void consume() throws InterruptedException {
+    public synchronized void consume() throws InterruptedException {
         Random random = new Random();
         while (true) {
-            synchronized (lock) {
+            //synchronized (lock) {
                 while (list.size() == 0) {
-                    lock.wait();
+                    //lock.wait();
+                    wait();
                 }
                 System.out.print("List size is: " + list.size());
                 int value = list.removeFirst();
                 System.out.println("; Value is: " + value);
-                lock.notify();
-            }
+            //lock.notify();
+            notify();
+            //}
             Thread.sleep(random.nextInt(1000));
         }
     }

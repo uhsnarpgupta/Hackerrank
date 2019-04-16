@@ -1,6 +1,8 @@
 package producerconsumer;
 
+import java.util.ArrayList;
 import java.util.Random;
+import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -8,6 +10,10 @@ public class App {
     private static BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
 
     public static void main(String[] args) {
+        Vector<Integer> v = new Vector<>();
+        v.add(1);
+        ArrayList<Integer> it = new ArrayList<>();
+        //it.add()
         Thread t1 = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -58,4 +64,6 @@ public class App {
             }
         }
     }
+
+
 }

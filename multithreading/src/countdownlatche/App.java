@@ -38,3 +38,9 @@ public class App {
         System.out.println("Completed");
     }
 }
+/*
+CountDownLatch is used to make sure that a task waits for other threads before it starts
+
+When we create an object of CountDownLatch, we specify the number of threads it should wait for,
+all such thread are required to do count down by calling
+ */
