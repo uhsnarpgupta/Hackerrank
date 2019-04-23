@@ -17,11 +17,14 @@ public class MergeOverlappingIntervals {
         Stack<Interval> stack = new Stack<>();
 
         // sort the intervals in increasing order of start time
-        Arrays.sort(arr, new Comparator<Interval>() {
+       /* Arrays.sort(arr, new Comparator<Interval>() {
             public int compare(Interval i1, Interval i2) {
                 return i1.start - i2.start;
             }
-        });
+        });*/
+
+        //Arrays.sort(arr, (l1, l2) -> l1.start - l2.start);
+        Arrays.sort(arr, Comparator.comparing(Interval::getStart));
 
         // push the first interval to stack
         stack.push(arr[0]);
@@ -69,6 +72,10 @@ class Interval {
     Interval(int start, int end) {
         this.start = start;
         this.end = end;
+    }
+
+    public int getStart() {
+        return start;
     }
 }
 // This code is contributed by Gaurav Tiwari 
