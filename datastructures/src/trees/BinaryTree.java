@@ -99,20 +99,20 @@ public class BinaryTree {
 
 
     // working approach
-    public static void levelOrderTraversal(Node root){
+    public static void levelOrderTraversal(Node root) {
         Queue<Node> queue = new LinkedList<Node>();
-        if( root != null ){
+        if (root != null) {
             queue.add(root);
         }
-        while( !queue.isEmpty() ){
+        while (!queue.isEmpty()) {
             Node tree = queue.remove();
             System.out.print(tree.data + " ");
 
-            if( tree.left != null ){
-                queue.add( tree.left );
+            if (tree.left != null) {
+                queue.add(tree.left);
             }
-            if( tree.right != null ){
-                queue.add( tree.right );
+            if (tree.right != null) {
+                queue.add(tree.right);
             }
         }
     }
@@ -172,5 +172,28 @@ public class BinaryTree {
         for (Map.Entry<Integer, Node> entry : topViewMap.entrySet()) {
             System.out.print(entry.getValue().data + " ");
         }
+    }
+
+    /* Returns true if binary tree with root as root is height-balanced */
+    private boolean isBalanced(Node node) {
+        int lh; /* for height of left subtree */
+
+        int rh; /* for height of right subtree */
+
+        /* If tree is empty then return true */
+        if (node == null)
+            return true;
+
+        /* Get the height of left and right sub trees */
+        lh = height(node.left);
+        rh = height(node.right);
+
+        if (Math.abs(lh - rh) <= 1
+                && isBalanced(node.left)
+                && isBalanced(node.right))
+            return true;
+
+        /* If we reach here then tree is not height-balanced */
+        return false;
     }
 }
