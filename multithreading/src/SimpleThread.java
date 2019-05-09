@@ -16,7 +16,7 @@ public class SimpleThread {
         public void run() {
             synchronized (lock) {
                 try {
-                    while (true) {
+                    while (i <= 100) {
                         System.out.println(i + "");
                         i++;
                         lock.wait(50);
@@ -33,7 +33,7 @@ public class SimpleThread {
         public void run() {
             synchronized (lock) {
                 try {
-                    while (true) {
+                    while (i <= 100) {
                         System.out.println(i + "");
                         i++;
                         lock.wait(50);

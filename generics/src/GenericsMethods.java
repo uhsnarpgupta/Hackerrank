@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class GenericsMethods {
     //Java Generic Method
     public static <T> boolean isEqual(GenericsType<T> g1, GenericsType<T> g2) {
@@ -37,4 +39,13 @@ class GenericsType<T> {
     public void set(T t1) {
         this.t = t1;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GenericsType)) return false;
+        GenericsType<?> that = (GenericsType<?>) o;
+        return Objects.equals(t, that.t);
+    }
+
 }
