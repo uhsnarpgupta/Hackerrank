@@ -1,8 +1,6 @@
 package producerconsumer;
 
-import java.util.ArrayList;
 import java.util.Random;
-import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -10,10 +8,6 @@ public class App {
     private static BlockingQueue<Integer> queue = new ArrayBlockingQueue<>(10);
 
     public static void main(String[] args) {
-        Vector<Integer> v = new Vector<>();
-        v.add(1);
-        ArrayList<Integer> it = new ArrayList<>();
-        //it.add()
         Thread t1 = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -67,3 +61,28 @@ public class App {
 
 
 }
+/*
+BlockingQueue Methods
+A BlockingQueue has 4 different sets of methods for inserting, removing and examining the elements in the queue.
+Each set of methods behaves differently in case the requested operation cannot be carried out immediately.
+Here is a table of the methods:
+
+ 	        Throws Exception	Special Value	Blocks	    Times Out
+Insert	:   add(o)	            offer(o)	    put(o)	    offer(o, timeout, timeunit)
+Remove	:   remove(o)	        poll()	        take()	    poll(timeout, timeunit)
+Examine	:   element()	        peek()
+
+The 4 different sets of behaviour means this:
+
+Throws Exception:
+If the attempted operation is not possible immediately, an exception is thrown.
+Special Value:
+If the attempted operation is not possible immediately, a special value is returned (often true / false).
+Blocks:
+If the attempted operation is not possible immedidately, the method call blocks until it is.
+Times Out:
+If the attempted operation is not possible immedidately, the method call blocks until it is, but waits no longer
+than the given timeout. Returns a special value telling whether the operation succeeded or not (typically true / false).
+It is not possible to insert null into a BlockingQueue. If you try to insert null, the BlockingQueue will throw a
+NullPointerException.
+ */

@@ -2,7 +2,7 @@ public class OddEvenThreads {
     public static void main(String[] args) {
         // shared class object
         SharedPrinter sp = new SharedPrinter();
-        // creating two threads
+        // creating bTrue threads
         Thread t1 = new Thread(new EvenNumProducer(sp, 10));
         Thread t2 = new Thread(new OddNumProducer(sp, 10));
         // starting threads

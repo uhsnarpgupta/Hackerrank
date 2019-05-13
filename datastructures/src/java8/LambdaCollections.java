@@ -25,6 +25,9 @@ public class LambdaCollections {
         //now remove the data types and allow the compiler to infer the type
         Collections.sort(names, (a, b) -> b.compareTo(a));
 
+        //Collections.sort(names, Comparator.reverseOrder());
+
+
         Book book1 = new Book("Miss Peregrine's home for peculiar children", "Ranson", "Riggs", 382);
         Book book2 = new Book("Harry Potter", "JK", "Rowling", 411);
         Book book3 = new Book("The Cat in the hat", "Dr", "Seuss", 45);
@@ -107,3 +110,16 @@ class Book {
                 authorLName;
     }
 }
+
+/*
+Lambda expressions basically express instances of functional interfaces (An interface with single abstract method is
+called functional interface. An example is java.lang.Runnable). lambda expressions implement the only abstract function
+and therefore implement functional interfaces
+
+lambda expressions are added in Java 8 and provide below functionalities.
+
+Enable to treat functionality as a method argument, or code as data.
+A function that can be created without belonging to any class.
+A lambda expression can be passed around as if it was an object and executed on demand.
+
+ */
