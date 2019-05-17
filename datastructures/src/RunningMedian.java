@@ -1,4 +1,5 @@
 import java.util.Collections;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Scanner;
 
@@ -7,6 +8,7 @@ public class RunningMedian {
 
     public static void main(String[] args) {
         int n = in.nextInt();
+
         PriorityQueue<Integer> min = new PriorityQueue<Integer>(Collections.reverseOrder());
         PriorityQueue<Integer> max = new PriorityQueue<Integer>();
         int a = in.nextInt();

@@ -1,7 +1,6 @@
 package java8;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -29,9 +28,7 @@ public class StreamInJava {
                 .collect(Collectors.toList());
         System.out.println(collected.toString());
 
-        /*
-        PRIMITIVE STREAMS
-         */
+        //PRIMITIVE STREAMS
         IntStream.range(1, 4)
                 .forEach(System.out::println);
 
@@ -41,10 +38,45 @@ public class StreamInJava {
                 .average()
                 .ifPresent(System.out::println);
 
+        List<String> items = new ArrayList<>(Arrays.asList("One", "Two", "Three", "Four"));
+
+
+        //
+        //The min() and max() methods are stream processing methods. Once these are called, the stream will be iterated,
+        //filtering and mapping applied, and the minimum or maximum value in the stream will be returned.
+        //
+        String shortest = items.stream()
+                .min(Comparator.comparing(String::length))
+                .get();
+
+        //The count() method simply returns the number of elements in the stream after filtering has been applied.
+        long count = items.stream()
+                .filter(item -> item.startsWith("T"))
+                .count();
+
         //map double to ints
         Stream.of(1.5, 2.3, 3.7)
                 .mapToInt(Double::intValue)
                 .forEach(System.out::println);
+
+
+        //The reduce() method can reduce the elements of a stream to a single value
+        String reduced2 = items.stream()
+                .reduce((acc, item) -> acc + " " + item)
+                .get();
+
+        System.out.println(reduced2);
+
+        String reduced = items.stream()
+                .reduce("", (acc, item) -> acc + " " + item);
+        System.out.println(reduced);
+
+
+        String reduced3 = items.stream()
+                .filter( item -> item.startsWith("O"))
+                .reduce("", (acc, item) -> acc + " " + item);
+        System.out.println(reduced3);
+
     }
 }
 /*
